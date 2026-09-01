@@ -522,3 +522,6 @@
 - 全仓库发布扫描未发现私钥或 GitHub token；两处 `api_key="local-vllm"` 为本地 OpenAI-compatible vLLM 占位值。36 项 unit tests 与 `compileall` 全部通过。
 - README 已从早期脚手架描述更新到 Stage 18 的真实状态，明确记录 G02/F02 负结果、F10 当前 OOM 阻塞和“尚无正式 F10-F14/最终 benchmark 结论”的边界。
 - 新增 `.gitattributes`，公开仓库中的 Markdown、Python、shell/Slurm、YAML、JSON/JSONL 与表格文本统一为 LF，避免 Windows CRLF 造成全文件尾随空格误报或 Linux 脚本执行问题；safetensors fixture 明确按二进制处理。
+- GitHub 官方授权确认账户为 `Jarod-Leo`；创建公开仓库 `https://github.com/Jarod-Leo/CabinAgent-RL`，默认分支 `main`，并设置本地 `origin`。
+- 首次公开 commit `ad0d12c6cd7b155472bd9ae0c12b50977241ff94` 已推送；`git ls-remote` 验证远端 `main` 与本地 HEAD 完全一致，工作区为 `main...origin/main` 且无未提交文件。
+- 后续每个阶段只有在实验记录、必要验证和成功判定全部完成后才创建并推送阶段 commit；失败 attempt 仍及时写入实验文档，但不会标记为阶段成功。

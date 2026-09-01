@@ -165,7 +165,7 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 
 实际提交训练时若目标 run 目录已存在，提交器必须创建 `_rN` attempt 目录，不覆盖或复用旧 manifest。Slurm 作业在 submitted、running、completed/failed 阶段原子更新 manifest 的 job ID、节点和状态；中断信号统一转为失败状态，失败 attempt 原样保留。生命周期元数据变换保持 source/config hash 等复现字段不变。
 
-公开 Git 仓库 `CabinAgent-RL` 使用 `main` 分支，只保存源码、配置、可复现实验文档、测试与精选小型报告；模型、环境、checkpoints、正式 experiments、官方/派生数据、缓存和部署传输包通过 `.gitignore` 排除。仓库文本通过 `.gitattributes` 统一为 LF，保证 Linux shell/Slurm 可执行性。README 必须同步真实阶段状态与未完成边界。任何公开提交前必须完成敏感信息与大文件扫描，集群用户名、主机、密码、密钥和令牌不得进入 commit。阶段取得已记录且已验证的成功后，先同步阶段文档，再提交并推送对应 Git commit；失败 attempt 继续记录，但不把失败伪装为阶段成功。
+公开 Git 仓库为 `https://github.com/Jarod-Leo/CabinAgent-RL`，使用 `main` 分支，只保存源码、配置、可复现实验文档、测试与精选小型报告；模型、环境、checkpoints、正式 experiments、官方/派生数据、缓存和部署传输包通过 `.gitignore` 排除。仓库文本通过 `.gitattributes` 统一为 LF，保证 Linux shell/Slurm 可执行性。README 必须同步真实阶段状态与未完成边界。任何公开提交前必须完成敏感信息与大文件扫描，集群用户名、主机、密码、密钥和令牌不得进入 commit。阶段取得已记录且已验证的成功后，先同步阶段文档，再提交并推送对应 Git commit；失败 attempt 继续记录，但不把失败伪装为阶段成功。首次公开快照 commit 为 `ad0d12c6cd7b155472bd9ae0c12b50977241ff94`，已验证与远端 `main` 一致。
 
 ## 10. 核心指标
 
