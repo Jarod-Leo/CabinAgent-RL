@@ -1,0 +1,19 @@
+# Optional GPU/training/serving dependencies for Linux CUDA environments.
+# Install only on the Pro 6000 cluster after matching CUDA/PyTorch versions.
+# Intended first compatibility target: CUDA >= 12.8, veRL 0.9.0, vLLM 0.20.2.
+torch
+transformers
+accelerate
+peft
+datasets
+pyyaml
+openai>=1.60.0
+pyarrow>=18.0.0
+vllm==0.20.2
+verl==0.9.0
+# Required by the veRL V1 PPO trainer imported by verl 0.9.0. Keep this
+# explicit because the published verl wheel metadata does not pull it in.
+TransferQueue==0.1.7
+# veRL's FSDP automodel engine defaults to FlashAttention2. Build this exact
+# official-container pin for the Pro 6000 Blackwell architecture on-cluster.
+flash_attn==2.8.3

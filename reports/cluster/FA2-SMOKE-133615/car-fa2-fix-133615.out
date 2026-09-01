@@ -1,0 +1,78 @@
+Collecting flash_attn==2.8.3
+  Using cached flash_attn-2.8.3.tar.gz (8.4 MB)
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: torch in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from flash_attn==2.8.3) (2.11.0)
+Requirement already satisfied: einops in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from flash_attn==2.8.3) (0.8.2)
+Requirement already satisfied: filelock in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (3.32.4)
+Requirement already satisfied: typing-extensions>=4.10.0 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (4.16.0)
+Requirement already satisfied: setuptools<82 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (81.0.0)
+Requirement already satisfied: sympy>=1.13.3 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (3.6.1)
+Requirement already satisfied: jinja2 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (3.1.6)
+Requirement already satisfied: fsspec>=0.8.5 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (2026.6.0)
+Requirement already satisfied: cuda-toolkit==13.0.2 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (13.0.2)
+Requirement already satisfied: cuda-bindings<14,>=13.0.3 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (13.3.1)
+Requirement already satisfied: nvidia-cudnn-cu13==9.19.0.56 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (9.19.0.56)
+Requirement already satisfied: nvidia-cusparselt-cu13==0.8.0 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (0.8.0)
+Requirement already satisfied: nvidia-nccl-cu13==2.28.9 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (2.28.9)
+Requirement already satisfied: nvidia-nvshmem-cu13==3.4.5 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (3.4.5)
+Requirement already satisfied: triton==3.6.0 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from torch->flash_attn==2.8.3) (3.6.0)
+Requirement already satisfied: nvidia-cublas==13.1.0.3.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (13.1.0.3)
+Requirement already satisfied: nvidia-cuda-runtime==13.0.96.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (13.0.96)
+Requirement already satisfied: nvidia-cufft==12.0.0.61.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (12.0.0.61)
+Requirement already satisfied: nvidia-cufile==1.15.1.6.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (1.15.1.6)
+Requirement already satisfied: nvidia-cuda-cupti==13.0.85.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (13.0.85)
+Requirement already satisfied: nvidia-curand==10.4.0.35.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (10.4.0.35)
+Requirement already satisfied: nvidia-cusolver==12.0.4.66.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (12.0.4.66)
+Requirement already satisfied: nvidia-cusparse==12.6.3.3.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (12.6.3.3)
+Requirement already satisfied: nvidia-nvjitlink==13.0.88.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (13.0.88)
+Requirement already satisfied: nvidia-cuda-nvrtc==13.0.88.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (13.0.88)
+Requirement already satisfied: nvidia-nvtx==13.0.85.* in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.2; platform_system == "Linux"->torch->flash_attn==2.8.3) (13.0.85)
+Requirement already satisfied: cuda-pathfinder>=1.4.2 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from cuda-bindings<14,>=13.0.3->torch->flash_attn==2.8.3) (1.8.0)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from sympy>=1.13.3->torch->flash_attn==2.8.3) (1.3.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages (from jinja2->torch->flash_attn==2.8.3) (3.0.3)
+Building wheels for collected packages: flash_attn
+  Building wheel for flash_attn (pyproject.toml): started
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): still running...
+  Building wheel for flash_attn (pyproject.toml): finished with status 'done'
+  Created wheel for flash_attn: filename=flash_attn-2.8.3-cp311-cp311-linux_x86_64.whl size=63235995 sha256=8cb9ac2e57ced23975269e036a8862c173de48d4118285ccb182c577e4b13999
+  Stored in directory: /projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/.cache/pip/wheels/42/31/1f/4b22dd7295b3cb064b8fa9038f6d58fb15c9571555b2d7c39c
+Successfully built flash_attn
+Installing collected packages: flash_attn
+Successfully installed flash_attn-2.8.3
+{
+  "checked_at": "2026-09-01T06:11:44.838137+00:00",
+  "device_capability": [
+    12,
+    0
+  ],
+  "device_name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+  "expected_version": "2.8.3",
+  "generated_tokens": 1,
+  "installed_version": "2.8.3",
+  "kernel_forward_backward_finite": true,
+  "max_memory_allocated_bytes": 15287706112,
+  "model_attn_implementation": "flash_attention_2",
+  "model_path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901",
+  "schema_version": 1,
+  "slurm_job_id": "133615",
+  "status": "PASS",
+  "torch_cuda": "13.0",
+  "torch_version": "2.11.0+cu130"
+}

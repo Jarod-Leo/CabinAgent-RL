@@ -1,0 +1,524 @@
+# CabinAgent-RL Progress
+
+## 2026-06-20
+
+### Stage 0: Orientation Started
+
+- Read `Project.md` and `draft.md` with UTF-8 output after detecting terminal mojibake.
+- Confirmed the repository currently has only project documents and no code scaffold.
+- Confirmed the folder is not a git repository, so progress will be tracked in markdown files instead of commit history for now.
+- Decided the first runnable baseline will use deterministic local sample tasks while preserving interfaces for real CAR-bench, BFCL, HF, and vLLM integration.
+
+### Stage 0: Planning Files Complete
+
+- Created `task_plan.md`, `findings.md`, and `Progress.md`.
+- Captured the first-session scope: dependency-light sample baseline first, real benchmark/model integration later.
+- Logged initial environment issues: no git repository and terminal mojibake unless UTF-8 output is forced.
+
+### Stage 1: Repo Scaffold Complete
+
+- Created the recommended project directories under `configs/`, `scripts/`, `src/`, `data/`, `reports/`, `failure_cases/`, `checkpoints/`, and `demo/`.
+- Added local baseline configs for model, CAR/BFCL eval, training placeholders, and vLLM serving.
+- Added `README.md`, `requirements.txt`, and `requirements-gpu.txt`.
+- Added script entry points for baseline eval, data building, future training, vLLM serving, and latency measurement.
+- Added normalized sample CAR-bench-like and BFCL-like JSONL tasks for local smoke testing.
+
+### Stage 2: First Smoke Issue Fixed
+
+- `python -m src.eval.run_baseline --benchmark all` completed and generated 9 sample trajectories.
+- Direct data-builder execution initially failed with `ModuleNotFoundError: No module named 'src'` because Python put `scripts/` on `sys.path`.
+- Fixed the standalone data builder scripts by adding the repository root to `sys.path`.
+
+### Stage 2: Baseline Core Complete
+
+- Implemented normalized benchmark/task/trajectory schema in `src/data/trajectory_schema.py`.
+- Implemented deterministic `local_rules` model adapter plus CAR/BFCL sample adapters.
+- Implemented metric scoring, simulated tool validation, failure taxonomy, benchmark reports, unified CSV summary, and failure case persistence.
+- Implemented PRM-Lite deterministic scoring and GRPO reward bridge placeholder.
+
+### Stage 3: Data Chain Complete
+
+- Built SFT records from successful trajectories: 6 train and 1 validation sample.
+- Built preference pairs from failed trajectories: 2 pairs.
+- Built PRM-Lite debug reward rows: 9 rows.
+- Generated reports for SFT data, preference data, PRM-Lite, CAR baseline, BFCL baseline, eval summary, and failure taxonomy.
+
+### Stage 4: Smoke Verification Complete
+
+- Final verification commands:
+  - `python -B -m src.eval.run_baseline --benchmark all`
+  - `python -B scripts\build_sft_data.py --input data\eval_cache\all_trajectories.jsonl`
+  - `python -B scripts\build_preference_data.py --input data\eval_cache\all_trajectories.jsonl`
+  - `python -B scripts\build_prm_lite_data.py --input data\eval_cache\all_trajectories.jsonl`
+- Results:
+  - CAR sample baseline: 5 samples, success 0.8000, 1 failure case.
+  - BFCL sample baseline: 4 samples, success 0.7500, 1 failure case.
+  - Failure taxonomy currently contains 2 `F1_TOOL_NAME_ERROR` examples from intentionally unhandled sample tasks.
+- Checked and removed temporary Python bytecode cache; no `__pycache__` directories remain.
+
+## 2026-08-30
+
+### Stage 5: Cluster Pre-flight Complete
+
+- Connected to `login-3.cluster02.eee.ntu.edu.sg` and rechecked live Slurm, account, QoS, GPU, and storage limits.
+- Confirmed account `msc` with default QoS `msc`; selected the fully idle `gpu-5090-2` as the preferred smoke-test node, subject to allocation-time availability.
+- Verified official cluster guidance through short CPU Slurm jobs; code may stay under home, while datasets, environments, logs, checkpoints, and results must use project SSD.
+- Created the former `cabinagentrl` project through `storagemgr` with 150 GB SSD. This was the initial deployment root before the Stage 9 migration.
+- Uploaded and extracted the code-only baseline at `/home/jiatian001/CabinAgent-RL`; local and remote deployment archive SHA-256 values match.
+
+### Stage 6: Cluster Smoke Harness Added
+
+- Added `scripts/cluster_smoke.sh` with configurable duration and heartbeat intervals.
+- The harness runs the baseline and all three derived-data builders, verifies required outputs, records GPU health every minute, and exits with `SMOKE_OK` only after the requested duration.
+- Updated `Project.md` Phase 0 deliverables and acceptance criteria to include the reproducible Slurm smoke path.
+- First Slurm launch `129964` exited after 2 seconds because compute nodes do not expose Python by default; no baseline logic ran and the GPU was released immediately.
+- Confirmed `Miniforge3/24.11.3-1` provides Python 3.12.9, then updated the harness to load that fixed module version before running checks.
+- Dataset job `129963` also exited immediately because `sbatch --wrap` used `/bin/sh`, where `pipefail` is unsupported; the retry uses POSIX-compatible shell options and the target directories remain clean.
+
+### Stage 6: Remote Deployment Complete
+
+- Created the initial private SSD working tree under the former `cabinagentrl` project and added its data, logs, checkpoints, cache, and environment subdirectories.
+- Synced the baseline code and updated smoke harness to the SSD directory; `bash -n` passes on the cluster.
+- Started corrected dataset download job `129966` on `cpu-1` and corrected 30-minute smoke job `129967` on `gpu-5090-2`.
+- Smoke initialization passed Python 3.12.9, RTX 5090 visibility, 9 baseline trajectories, and SFT/preference/PRM-Lite data generation before entering the heartbeat window.
+
+### Stage 7: Thirty-Minute Cluster Smoke Complete
+
+- Slurm job `129967` completed on `gpu-5090-2` with exit code `0:0` after 30 minutes and 2 seconds.
+- The harness emitted `SMOKE_OK` at 1,800 seconds after uninterrupted minute-level Python, output, and GPU health checks.
+- Confirmed `squeue --me` is empty and `gpu-5090-2` returned to fully idle state with all four RTX 5090 GPUs free.
+
+### Stage 8: Official Dataset Download In Progress
+
+- Slurm job `129966` cloned CAR-bench commit `54990894241f2c07e9b523928c2a29e9b693d313` and Gorilla/BFCL commit `6ea57973c7a6097fd7c5915698c54c17c5b1b6c8` to project SSD.
+- Verified BFCL V4 JSON data is included directly in the Gorilla repository and no dataset files use Git LFS.
+- CAR-bench's repository contains only reference copies; its official Hugging Face snapshot has 18 files totaling 720,638,694 bytes and still needs to be downloaded.
+- Added `scripts/download_hf_dataset.py` to download public dataset snapshots with path validation, size checks, and LFS SHA-256 verification.
+- Slurm job `130045` downloaded and verified all 18 CAR-bench snapshot files (720,638,694 bytes) with exit code `0:0` in 47 seconds.
+- Added `scripts/verify_official_data.py` for final JSONL parsing checks across official CAR tasks, CAR mock data, and BFCL V4 data.
+- First verification job `130051` parsed all 254 CAR tasks, then found that some nested BFCL `*.json` files are formatted JSON documents rather than JSONL; the job exited without modifying data.
+- Updated the verifier to accept both complete JSON documents and line-delimited JSON while preserving file/line error context.
+
+### Stage 8: Official Dataset Download Complete
+
+- Verification job `130054` completed with exit code `0:0` and emitted `OFFICIAL_DATA_OK`.
+- CAR-bench validation: 6 task files, 254 task records, and 10 mock-data files; the separate Hugging Face snapshot contains 18 fully downloaded and checksum-verified files.
+- BFCL validation: 51 BFCL V4 JSON/JSONL files and 9,673 parsed records, including companion answer files and retained official unused categories.
+- Final SSD locations:
+  - `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/data/official/car-bench`
+  - `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/data/official/car-bench-dataset`
+  - `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/data/official/gorilla`
+- Final audit: `squeue --me` is empty, no `.part` files remain, reports are non-empty, and the project uses about 1.6 GB of its 150 GB SSD allocation.
+
+### Stage 9: SSD Path Migration Pre-flight Complete
+
+- Confirmed no active Slurm jobs before migration.
+- Resolved `/projects/cabinagentrl` to the managed SSD project `/projects/_ssd/cabinagentrl`; current usage is about 1.6 GB.
+- Confirmed `/projects/jiatian001ssd` does not yet exist and must be provisioned through `storagemgr` before data can be moved safely.
+- Local source/config search found no executable code hardcoding the old path; only historical planning and progress records require path updates.
+
+### Stage 9: Destination SSD Provisioned
+
+- Temporarily reduced the former `cabinagentrl` allocation to 10 GB, safely above its current 1.6 GB usage.
+- Created `/projects/jiatian001ssd` through `storagemgr` with 140 GB SSD allocation.
+- Source data remains unchanged; deletion is deferred until a Slurm copy and full verification succeed.
+
+### Stage 9: Copy And New-Path Verification Complete
+
+- Slurm job `130531` copied 1,234 files (1,555,401,389 bytes) to `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL`.
+- Checksum verification produced an empty difference file; source and destination file counts and byte totals match exactly.
+- Slurm job `130532` completed with exit code `0:0` from the new path, passing baseline evaluation, all three data builders, official dataset parsing, and report checks.
+- The old source remained intact at this checkpoint pending the explicitly requested final cutover.
+
+### Stage 9: SSD Path Migration Complete
+
+- The first protected cutover job `130534` stopped before deletion because regenerated reports had timestamp-only differences; the old source remained intact.
+- Slurm job `130535` repeated the full checksum comparison while ignoring metadata-only timestamp changes, found no content differences, and removed only the exact verified old working tree.
+- Deleted the now-empty former `cabinagentrl` storage project and expanded `jiatian001ssd` from 140 GB to the full 150 GB SSD allocation.
+- Moved migration audit logs beneath the canonical project tree and confirmed the former `/projects/cabinagentrl` entry no longer exists.
+- Canonical cluster root is now `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL`; no executable script or configuration required a path change.
+
+### Stage 10: SFT-to-GRPO Experiment Design Complete
+
+- Removed DPO/RLAIF from the active project flow and retired the old DPO and two placeholder GRPO configs/scripts.
+- Rewrote `Project.md` around one frozen Qwen2.5-7B SFT parent and five independent GRPO branches: E10 Vanilla, E11 Turn-Discount, E12 LATA, E13 PRM-Lite, and E14 PRM-Lite + LATA.
+- Fixed formal training to 250 steps with checkpoint/evaluation points at 50, 100, 150, 200, and 250; the former R05/step-300 expansion is not scheduled.
+- Added `refine-logs/EXPERIMENT_PLAN.md` and `refine-logs/EXPERIMENT_TRACKER.md` with claims, controls, run order, stopping rules, result-to-claim requirements, and per-attempt records.
+
+### Stage 10: Reward And Advantage Scaffolding Complete
+
+- Reworked PRM-Lite into CAR-specific deterministic rule events with a clipped `[-0.5, 0.5]` process score and fixed `outcome + 0.3 * process_score` composition for E13/E14.
+- Added project-local veRL estimators for Turn-Discount and LATA, including stable log-space weights and external registry wiring so installed veRL source does not need modification.
+- Added a strict veRL reward adapter that requires the completed environment trajectory from the future CAR agent loop; it fails instead of silently scoring response text without state.
+- Added experiment manifests for all five branches and model/runtime configs for the 72B-AWQ simulator, one-GPU 7B trainer, and two-node Pro 6000 allocation.
+
+### Stage 10: Dual-Node Slurm Scaffolding Validated
+
+- Live cluster inspection confirmed 96 GB Pro 6000 GPUs, `gpu:pro6000` GRES, `highmem` eligibility, and the cluster plugin's automatic 4 CPU / 90 GiB allocation per one-GPU node.
+- Added a job-specific vLLM simulator service, run manifest creation, veRL override renderer, atomic two-node Slurm orchestrator, one-shot Pro 6000 status command, and submission wrapper without login-node polling.
+- Local validation passed Python compile, all YAML parsing, launch command rendering, 7 unit tests, the 9-sample baseline, and 9-row PRM-Lite regeneration.
+- Run manifest creation was exercised in a temporary directory; config/common/source SHA-256 fields and required run subdirectories were generated correctly, then the temporary run was removed.
+- Cluster validation passed `bash -n` for all new shell/Slurm scripts and `sbatch --test-only` for a two-node Pro 6000 allocation; no GPU job was submitted and `squeue --me` remained empty.
+- The cluster's base Miniforge module does not include PyYAML, so the veRL renderer is intentionally deferred to the named GPU environment where `requirements-gpu.txt` installs it; local rendering for all five configs passed.
+- The formal launch deliberately remains blocked until `data/processed/carbench/{train,dev}.parquet`, `checkpoints/sft_lora`, and `configs/agent_loop/carbench.yaml` exist. These are Stage 11-12 integration gates, not completed training claims.
+
+### Stage 11: Direct-RL Main Path Complete
+
+- User confirmed that Qwen2.5-7B-Instruct should enter reinforcement learning directly instead of requiring project-specific SFT first.
+- Removed `checkpoints/sft_lora` and `actor_rollout_ref.model.lora_adapter_path` from formal veRL prerequisites; every E10-E14 run now creates fresh LoRA weights from the same Qwen2.5-7B-Instruct revision.
+- Replaced the former E01 SFT parent in the experiment plan/tracker with G00, a real CAR outcome-only rollout gate.
+- Added `configs/train/direct_rl_gate.yaml`, `src/eval/rollout_gate.py`, `scripts/check_rollout_gate.py`, and unit tests for passing, all-zero, and malformed rollout groups.
+- Gate thresholds are fixed at 80 trajectories, parse rate >= 0.95, executable rate >= 0.85, mixed outcome group ratio >= 0.20, loop/max-turn rate <= 0.20, and at least one success.
+- The gate CLI loads every threshold from `configs/train/direct_rl_gate.yaml`, preventing command defaults and the documented experiment contract from drifting apart.
+- Renamed the old SFT config/launcher to guarded `sft_fallback_lora` artifacts. They are disabled by default and allowed only after a persisted gate failure; fallback runs form a separate experiment family.
+- Updated `Project.md`, README, AGENTS, task plan, findings, experiment plan, and tracker to reflect the direct-RL data chain and execution order.
+- Local validation passed 10 unit tests, 15 YAML files, five Direct-GRPO dry-run renderings with no SFT adapter path, and the nine-sample baseline.
+- The updated tree was synchronized to the canonical cluster root; remote shell syntax and two-node `sbatch --test-only` passed, no GPU task was submitted, and `squeue --me` remained empty.
+
+### Stage 12: Official CAR Online Runtime Implemented
+
+- Rechecked the live cluster rules and the newly documented Lmod workflow. The account remains `msc`; Miniforge3 `24.11.3-1` and CUDA `12.8.0` are available, and no user job was active during pre-flight.
+- Live Pro 6000 inspection found one free card on `gpu-pro6000-6`, but no free `highmem` Pro 6000. The free low-host-memory card was not used for the 72B-AWQ simulator.
+- Added `src/integrations/car_bench_runtime.py`, which reads the complete downloaded CAR JSONL directly, restores hidden tasks only on the environment side, initializes isolated CAR context variables, executes official tools, calls the local 72B simulator with structured output, and applies automatic-only policy checks without an LLM policy evaluator.
+- Added the veRL v0.9 token-in/token-out loop in `src/training/car_bench_agent_loop.py`. It preserves generated-token and observation masks, uses the Hermes/Qwen tool-call format, emits full normalized trajectories, and attaches deterministic CAR/PRM-Lite reward before veRL post-processing.
+- Added leakage-safe `103/26` train/dev parquet construction plus a stratified 20-task G00 set. Persona, instruction, action ground truth, and initial context are excluded from parquet rows and policy prompts.
+- Added standalone two-vLLM G00 rollout collection, a three-family structured simulator smoke, local model snapshot download, and policy vLLM serving.
+- Added CPU Slurm jobs for the Conda environment, model snapshots, and parquet generation; added single-GPU simulator smoke, two-GPU G00, and a dependency-controlled pipeline that runs a 2-step E10 trainer smoke before sequential E10-E14 formal jobs.
+- Updated trainer defaults for one 96 GB policy GPU: 4 tasks x 4 rollouts, 32K prompt plus 8K accumulated response, LoRA 32/32, FSDP parameter/optimizer offload, async vLLM, and automatic checkpoint resume.
+- Local validation passes 12 unit tests, Python compilation, 16 YAML files, and Direct-GRPO command rendering. Cluster shell syntax, Slurm validation, environment installation, model download, parquet generation, and GPU execution remain the next Stage 12 actions. Two sandbox-created test directories were removed after exact-path verification.
+
+### Stage 12: Initial Pipeline Submission Partially Accepted
+
+- Submitted pipeline `20260830T141431Z`. Slurm accepted environment `131248`, model download `131249`, data preparation `131250`, simulator smoke `131251`, and G00 `131252`.
+- The live `msc` QoS rejected the sixth and later submissions with `QOSMaxSubmitJobPerUserLimit`. No training smoke or formal experiment job was created, although their run directories had already been initialized.
+- Fixed the submit helper so an `sbatch` failure cannot be recorded as an empty successful job ID.
+- Reworked post-gate scheduling into success chaining: G00 submits only the trainer smoke after its gate check passes; the smoke and each formal ablation submit exactly one successor after successful completion. This respects the five-submitted-job limit without an idle polling job.
+- With explicit user approval, cancelled only the stale pending G00 job `131252`; environment `131248`, model `131249`, data `131250`, and simulator smoke `131251` were left unchanged.
+- Prevented stale pre-created run manifests from being reused: every actual submission now selects a fresh `_rN` attempt directory when needed and records submitted/running/completed/failed Slurm metadata atomically, including signal-driven exits.
+- Refactored the manifest lifecycle test to a filesystem-independent unit test after Windows sandbox ACLs rejected a temporary-directory fixture; this keeps the test deterministic and avoids touching run artifacts.
+- Local validation after the scheduling fix passed 13 unit tests and Python compilation; remote shell syntax, the focused manifest test, and dependency-free `sbatch --test-only` for G00/trainer also passed.
+- Environment job `131248` completed successfully in 20m45s. Model job `131249` then failed after 18s because the cluster's shared Hugging Face egress IP returned HTTP 429 with `Retry-After: 153`; Slurm correctly cancelled dependent data `131250` and simulator smoke `131251`.
+- Added bounded model-download retries that honor `Retry-After`, back off on 429/5xx/network timeouts, limit snapshot workers to four, retain partial local snapshots, and never persist a token. The resumed chain starts at model download rather than rebuilding the verified environment.
+- Remote shell syntax and two focused download retry tests passed. Submitted resumed models `131280`, data `131281`, 30-minute simulator smoke `131282`, and replacement G00 `131283`; all four were accepted under the five-job QoS limit.
+- G00 `131283` carries `PIPELINE_ID=20260830T141431Z`. On PASS it will create a fresh `smoke_e10_20260830T141431Z_r1` manifest and submit the two-step trainer smoke; no stale pre-created run directory is reused.
+- Models `131280` completed successfully in 13m42s with both 7B and 72B-AWQ marked ready; CAR parquet job `131281` then completed in 16s with train/dev/gate counts `103/26/20`.
+- Simulator smoke `131282` acquired `gpu-pro6000-7` but failed after one second because the Windows-created archive did not retain execute permission on `serve_simulator_vllm.sh`; dependent G00 `131283` was cancelled automatically and no model was loaded on the GPU.
+- Replaced every in-job invocation of repository shell entrypoints with explicit `bash` calls and normalized signal handling, removing reliance on Unix executable mode after cross-platform synchronization. The next retry starts at simulator smoke and reuses the verified environment, models, and parquet.
+- Remote syntax checks, artifact validation, and simulator `sbatch --test-only` passed. Submitted corrected simulator smoke `131298` and dependent G00 `131299`; all high-memory Pro 6000 nodes were allocated, so `131298` is pending on priority and will start automatically when a compatible card is released.
+- Simulator smoke `131298` automatically acquired `gpu-pro6000-7` and completed with exit `0:0` in 4m51s. vLLM loaded all 11 AWQ shards (38.76 GiB), exposed a healthy endpoint, and generated valid first-user messages for base, hallucination, and disambiguation CAR tasks; the result is `reports/simulator_smoke_131298.json`.
+- Startup profiling reported 39.7 GiB KV cache and 15.88x concurrency at 8192 tokens, but also revealed that vLLM compiled into `/home/jiatian001/.cache/vllm` and that `awq_marlin` is supported and faster than forced `awq`. G00 `131299` was placed on reversible user hold before smoke completion so it could not launch with those settings.
+- With explicit user approval, cancelled only held G00 `131299`. Added a shared compute-node runtime environment that redirects vLLM, TorchInductor, Triton, CUDA, FlashInfer, Hugging Face, Ray, and temporary caches to the project SSD.
+- Changed the 72B simulator default from forced generic AWQ to vLLM's detected AWQ-Marlin kernel. This is a serving-kernel optimization only; model weights, simulator prompts, sampling settings, reward, and ablation semantics remain frozen.
+- Remote syntax checks confirmed every runtime cache resolves beneath the canonical SSD root; optimized simulator and G00 `sbatch --test-only` passed. Submitted AWQ-Marlin/SSD-cache smoke `131323` and dependent G00 `131324`.
+- Optimized smoke `131323` completed on `gpu-pro6000-7` with exit `0:0` in 3m50s, confirming AWQ-Marlin and project-SSD caches. G00 `131324` later acquired `gpu-pro6000-[3,7]` but failed in 33s before rollout because policy vLLM rejected `max_model_len=40960` against Qwen2.5-7B's 32768-token model limit; the simulator process was then cancelled by job cleanup and no training was submitted.
+- Corrected the shared contract to `24576` prompt plus `8192` cumulative response tokens, added an explicit `policy_max_model_len=32768`, and derived rollout/actor/reference limits from that sum. Added a five-ablation regression test that rejects any return of the invalid 40960-token budget.
+
+## 2026-08-31
+
+### Stage 13: G00 Result Analysis Complete
+
+- Corrected-context G00 job `131880` completed 80 trajectories on `gpu-pro6000-[1,4]` in 5m54s; both vLLM services and the CAR environment remained healthy, then the fixed gate stopped the pipeline before training.
+- Archived the raw artifact locally at `reports/cluster/G00-131880/trajectories.jsonl` and re-evaluated it with the strengthened group contract.
+
+| Metric | G00 value | Threshold | Result |
+|---|---:|---:|---|
+| tool-call parse rate | 0.996667 | >= 0.95 | pass |
+| executable tool rate | 0.989062 | >= 0.85 | pass |
+| mixed outcome group ratio | 0.10 | >= 0.20 | fail |
+| initial-user consistency | 0.85 | 1.00 | fail |
+| loop/max-turn rate | 0.0125 | <= 0.20 | pass |
+| successful trajectories | 27 | >= 1 | pass |
+
+- Of 20 complete groups, 12 were all-failure, 6 all-success, and only 2 mixed; failure codes were dominated by argument errors (`22`) and safety-boundary errors (`19`). Three groups did not share one identical first user message, including one hallucination task that emitted `###STOP###` before the policy acted.
+- Interpretation: the tool/runtime baseline is viable, but G00 cannot yet establish a valid same-state grouped comparison or the required reward variance. The next run must repair group initialization and increase reproducible policy exploration without changing reward or thresholds.
+
+### Stage 13: G01 Adjustment Implemented
+
+- Added a strict initial simulator contract: the first user turn uses greedy decoding, must return `CONTINUE`, and retries with a corrective first-turn instruction before any invalid response can mutate simulator state. Later user turns remain at `temperature=0.2`.
+- Centralized G01 policy sampling in `configs/train/direct_rl_gate.yaml`: `temperature=1.0`, `top_p=0.95`, global seed `42`, deterministic per-task/per-trial request seeds, 20 tasks, group size 4, and unchanged outcome reward.
+- Added `consistent_initial_user_group_ratio == 1.0` to the gate, persisted all sampling metadata per trajectory, and made the Slurm gate label configurable so G01 artifacts cannot overwrite G00.
+- Local verification passed all 18 unit tests, Python compilation, YAML sampling assertions, and G00 reanalysis. The strengthened report correctly rejects G00 at mixed ratio `0.10` and initial-user consistency `0.85`.
+- Next action: synchronize the prepared G01 code to the canonical SSD tree, run remote syntax/config pre-flight with no active jobs, then submit `car-g01`. PASS automatically submits the 2-step E10 trainer smoke; FAIL activates the separately tracked minimal-SFT fallback decision.
+
+### Stage 13: G01 Submitted
+
+- Synchronized the 32 KiB Stage 13 archive to the canonical SSD tree; local and remote SHA-256 both equal `4dcfcf6368f0108ee72c45fddd0aada642b8614de9dddbf9f76b706911b7bc66`.
+- Remote pre-flight passed Python compilation, gate-focused unit tests, YAML assertions, `bash -n`, and a two-node Pro6000 `sbatch --test-only`. The cluster's unrelated installed `scripts` package prevents namespace-style discovery of `test_carbench_data.py`; local full discovery already passed all 18 tests.
+- Submitted G01 as Slurm job `131911` with `PIPELINE_ID=20260830T141431Z` and isolated `GATE_RUN_LABEL=G01`. It requests two high-memory Pro6000 nodes atomically and is pending on priority because every Pro6000 node was allocated at submission time.
+- On gate PASS, job `131911` will submit a fresh 2-step E10 trainer-smoke attempt. On gate FAIL, no GRPO job will be submitted and the persisted report will determine the minimal-SFT fallback.
+
+### Stage 13: G01 Attempt 1 Startup Failure Diagnosed
+
+- Job `131911` acquired `gpu-pro6000-[1,7]` but exited after 3 seconds before loading either model. Both service logs show the base Miniforge Python could not import `vllm`; no trajectory or gate report was produced and both GPUs were released immediately.
+- Root cause: the pre-flight shell had the project Conda prefix active, and `sbatch --export=ALL` inherited its Conda state. Inside nested `bash -lc`, `module purge/load` reset PATH while legacy `source activate` incorrectly treated the inherited prefix as already active.
+- Replaced nested activation in both the G01 gate and formal dual-node trainer with `conda shell.bash hook` plus explicit `conda activate`. This makes compute-node activation independent of the submit shell and fixes the same latent risk before trainer smoke.
+- Attempt `131911` remains archived as an infrastructure failure; it does not count as the controlled G01 rollout result. A new Slurm job ID will be used after remote contaminated-shell activation tests and `sbatch --test-only` pass.
+
+### Stage 13: G01 Rollout Result Analyzed
+
+- G01 attempt 2 (`131930`) completed 80 trajectories on `gpu-pro6000-[1,3]` in 5m53s. Parse `0.994479`, executable `0.864625`, and loop/max-turn `0.10` passed; 15 trajectories succeeded.
+- Mixed outcome groups improved from `2/20` (`0.10`) to `3/20` (`0.15`) but remained one group below the frozen `0.20` threshold. Initial-user consistency also remained `17/20` (`0.85`), so no trainer smoke was submitted.
+- All three inconsistent groups contained only minor wording variants at greedy temperature, confirming that concurrent vLLM requests are not a sufficient equality guarantee. Per-trial policy seeds and sampling metadata were present and correct.
+- G01 is not accepted as the final controlled gate because the same-initial-user contract was not satisfied. Added a thread-safe cache keyed by simulator model and the complete initial prompt hash: each task generates one validated first-turn structured response, all four rollouts reuse it, and different tasks remain parallel.
+- G02 will rerun the unchanged G01 task set, reward, thresholds, and policy sampling. If initial-user consistency reaches `1.0` but mixed outcome remains below `0.20`, the next stage is minimal SFT rather than another gate sampling sweep.
+
+### Stage 14: Valid Direct-RL Gate Failure Confirmed
+
+- G02 job `131950` completed all 80 trajectories on `gpu-pro6000-[3,8]` in 5m50s. The repaired grouped contract reached initial-user consistency `1.0`.
+- Parse `0.995729`, executable `0.888892`, loop/max-turn `0.075`, and 12 successful trajectories passed their thresholds, but mixed reward groups were `0/20` (`0.0 < 0.20`).
+- This is the first valid same-initial-state gate conclusion: successful trajectories exist, but each four-rollout group has a constant outcome and cannot provide a GRPO group advantage. No trainer job was submitted.
+- Per the frozen stopping rule, Direct-RL sampling adjustment ends at G02. The main E10-E14 family remains blocked and the project moves to a separately identified minimal-SFT fallback family.
+
+### Stage 14: Executable Minimal-SFT Fallback Implemented
+
+- Replaced the guarded placeholder with a real Transformers/PEFT Qwen2.5-7B LoRA trainer. It masks all context tokens, supervises only assistant language/tool-call tokens, enables bf16 and gradient checkpointing, and persists the final adapter, train/eval metrics, tokenization statistics, and CUDA memory peak.
+- The fallback dataset builder now merges G00/G01/G02 environment-success trajectories, preserves complete CAR tool schemas and multi-turn messages, avoids duplicate final responses, deduplicates identical conversations, and splits train/validation by task rather than row.
+- Fixed the fallback contract at LoRA rank/alpha `16/32`, max length `32768`, one epoch, learning rate `2e-4`, batch size 1 with gradient accumulation 4, and seed 42. This training family is not comparable as a direct E10-E14 initialization.
+- Added CPU Slurm data preparation plus a one-Pro6000 F00 2-step/4-record smoke. A successful smoke submits the full one-epoch F01 job; failed attempts retain separate run directories and lifecycle manifests.
+- Local validation passed 22 unit tests, Python compilation, CLI loading, and all YAML parsing. Real Qwen tokenizer length statistics, remote shell syntax, data counts, and GPU trainer compatibility remain the Stage 14 cluster pre-flight.
+- Added a CPU-side tokenizer pre-flight that rejects insufficient or fully overlength fallback data before any GPU is allocated. Added an explicit `scripts` package marker so cluster test discovery resolves project entrypoints instead of an unrelated installed package.
+- First CPU data attempt `131984` built 38 train and 14 validation records, then correctly failed before GPU submission because the progressive-prefix masking method produced zero labeled examples under the installed Transformers 5.10 Qwen template. Replaced it with direct Qwen assistant-boundary masking over each complete multi-turn conversation; attempt `131984` remains recorded as a preprocessing failure.
+- Second CPU attempt `131992` confirmed the record-level masking path but still produced zero examples. The root cause was version compatibility: Transformers 5.10 returns a `BatchEncoding` mapping, while the token helper recognized only a built-in `dict` and treated mapping keys as tokens. The helper now accepts generic mappings and `input_ids` attributes, with a regression test using a non-dict mapping.
+- Third CPU attempt `131999` completed in 10 seconds: 38 train and 14 validation conversations produced 38/14 labeled examples, with train lengths 3226-4309 tokens and validation lengths 3221-3298; no examples were overlength or missing assistant targets.
+- Updated the fallback stage submitter to call the project Conda Python by absolute prefix, so a successful F00 can submit F01 from a clean batch shell without inheriting login-node activation state.
+
+### Stage 14: F00 Smoke Passed, First F01 Attempt Invalidated
+
+- F00 job `132008` completed on `gpu-pro6000-1` with exit `0:0` in 39 seconds. Two optimizer steps ran without NaN/OOM, train loss was `3.608993`, validation loss was `1.909820`, peak allocated CUDA memory was `21.165 GiB`, and the 161.5 MB final adapter plus completed manifest were saved.
+- F00 automatically submitted F01 job `132013`, which also exited `0:0`, but its persisted metrics prove it inherited the smoke limits: only 4 train records and 2 optimizer steps were used. It is therefore an invalid full-run attempt, not a completed F01 result.
+- Root cause: `sbatch --export=ALL` propagated `MAX_TRAINING_STEPS=2` and `TRAIN_MAX_RECORDS=4` from the smoke batch shell. The full branch now explicitly exports both values as `-1`, overriding inherited smoke settings.
+- The `132013` run directory, adapter, metrics, and manifest remain archived. A fresh `_r1` F01 attempt must report 38 train records before it can be accepted as the full one-epoch fallback.
+
+### Stage 14: Full Minimal-SFT F01 Complete
+
+- Corrected F01 attempt 2 (`132020`) completed on `gpu-pro6000-1` with exit `0:0` in 53 seconds. It used all 38 train conversations for one epoch and 10 optimizer steps, then evaluated all 14 validation conversations.
+- Train loss was `0.902976`; validation loss was `0.584203`. Loss decreased from `2.119` at the first step to `0.329` at the last, gradients remained finite, and peak allocated CUDA memory was `22.91 GiB`.
+- The accepted adapter is `experiments/sft_fallback_full_20260830T141431Z_r1/checkpoints/final_adapter` (161.5 MB adapter weights), with completed manifest and machine-readable metrics. F01 does not alter or replace the direct E10-E14 initialization.
+- Added an adapter-aware vLLM policy serving path for G03. At submission time, G03 was defined as the frozen 20x4 gate using base Qwen2.5-7B plus the F01 adapter, with adapter paths recorded per trajectory; the later Stage 15 entry records why attempt 1 failed and invalidated that adapter.
+- Made the post-gate action explicit. Direct G00-style gates retain `direct_smoke`, while G03 is submitted with `POST_GATE_ACTION=none` so a PASS cannot accidentally launch the blocked E10 family before F10 configuration exists.
+
+### Stage 15: G03 Attempt 1 Failed And Invalidated The F01 Adapter
+
+- Live Slurm accounting confirms G03 job `132043` is finished with state `FAILED`, elapsed `00:06:10`, and exit code `1:0`; `squeue --me` is empty.
+- The job allocated two Pro 6000 GPUs, one each on `gpu-pro6000-1` and `gpu-pro6000-7`. The policy vLLM successfully loaded the F01 LoRA, so this was not a model-loading or GPU-allocation failure.
+- The rollout collector reached the official CAR environment, but tool calls repeatedly arrived with empty kwargs or string-valued arguments. CAR automatic policy evaluation then indexed `arguments["on"]` and raised `TypeError: string indices must be integers, not 'str'`.
+- Root cause: fallback SFT records preserved OpenAI `function.arguments` as JSON strings; the Qwen chat template applied `tojson` again, so F01 learned double-encoded tool arguments. Its low train/eval loss therefore measured fitting to an invalid target format.
+- No G03 gate report or trainer checkpoint was produced, and `POST_GATE_ACTION=none` prevented any GRPO submission. F01 attempt 2 remains archived as a technically completed Slurm run but is rejected as a downstream policy initializer.
+- Required correction: normalize arguments to objects before templating, add a template/parser round-trip regression test, rebuild data, rerun CPU tokenizer validation, F00, full F01, and then G03 attempt 2.
+
+### Stage 15: Experiment Documentation Split By Stage
+
+- Added `docs/实验阶段/实验阶段总览.md` plus six independent stage documents covering settings, GPU use, execution results, implemented improvements, remaining blockers, and next actions.
+- Updated `Project.md`, the experiment plan, tracker, and task plan so G03 is no longer shown as pending and downstream F10-F14 remain blocked until a corrected G03 PASS.
+
+### Stage 15: Mandatory Stage-Document Workflow Added
+
+- Added an explicit experiment-to-document Map in `AGENTS.md` for stages 01-06, covering infrastructure tasks, G00-G03, F00/F01, E10-E14, F10-F14, and frozen CAR/BFCL evaluation.
+- Every experiment implementation, retry, improvement, evaluation, or analysis must first load `Project.md`, `Progress.md`, the stage overview, and every mapped stage document involved in the operation.
+- Every attempt, including failed, interrupted, and invalid runs, must be appended to its stage document before the next submission with four separate sections: experiment settings, execution result, improvement reason, and improvement measures.
+- The same update must synchronize `Progress.md`, `refine-logs/EXPERIMENT_TRACKER.md`, and, when stage status or route changes, `Project.md` plus the stage overview. Existing failed attempts may not be overwritten or removed.
+
+## 2026-09-01
+
+### Stage 16: Corrected Fallback And Single-Node Dual-GPU Submission Prepared
+
+- Loaded the stage overview plus Stage 02 and Stage 04 documents before implementation, as required by the experiment-document Map.
+- Rechecked live cluster limits: account/QoS remains `msc`, the QoS permits two Pro 6000 GPUs per user, the user queue was empty, and Pro 6000 nodes expose 4-10 GPUs each; all highmem cards were allocated at inspection time.
+- Replaced both gate and GRPO `--nodes=2` requests with `--nodes=1 --gres=gpu:pro6000:2`. The initial independent-step implementation was later superseded by the single-step/two-task binding recorded below.
+- Added Job-ID-scoped allocation, simulator, policy, rollout, gate-check, and trainer logs in addition to Slurm stdout/stderr.
+- Fixed fallback SFT messages to use object-valued function arguments, reject double encoding, and validate the real Qwen chat-template tool-call round trip during the CPU tokenizer gate.
+- Added automatic corrected fallback chaining: CPU data/tokenizer gate -> F00 smoke -> F01 full -> G03, while preserving `POST_GATE_ACTION=none` after G03.
+- Local verification passed 26 unit tests, Python compilation, YAML parsing, and static single-node dual-GPU assertions. Remote shell/Slurm pre-flight and submission remain next.
+- Added a short same-node dual-GPU binding smoke that logs allocation and each step, rejects identical/empty `SLURM_STEP_GPUS`, and becomes an `afterok` dependency of G03 while CPU data and one-GPU F00/F01 may proceed independently.
+
+### Stage 16: Same-Node Dual-GPU Smoke Attempt 1 Diagnosed
+
+- Smoke job `132933` acquired two Pro 6000 GPUs on the same physical node `gpu-pro6000-7`; Slurm allocation recorded physical GPU indices `0,4` and both one-GPU steps exited successfully.
+- The batch check failed because each near-instant step saw GPU 0: the first step released its GPU before the second allocation was stably concurrent, so the smoke measured sequential reuse rather than simultaneous binding.
+- The smoke now keeps both steps alive for 10 seconds before comparison. Attempt 2 will receive a fresh Job ID, and G03 must depend on the replacement PASS rather than failed job `132933`.
+
+### Stage 16: Corrected Fallback Training Completed, Step Model Revised
+
+- CPU job `132934` completed in 1m02s. The real Qwen template gate validated 38/14 train/val records, 45/12 tool calls, zero overlength rows, and zero missing targets.
+- Corrected F00 `132935` completed in 45s on one Pro 6000; corrected full F01 `132942` completed in 1m17s on one Pro 6000 and produced a new final adapter.
+- Smoke attempt 2 `132950` confirmed that two independent `srun --exclusive` steps are serialized by this cluster's step-level resource allocation, even when the job owns two GPUs. This launch model is rejected for G03 and GRPO.
+- Added a single-step model: one `srun` launches two tasks with `--gpus-per-task=1 --gpu-bind=single:1`; task 0 owns the simulator and task 1 owns policy/rollout. Shared sentinel cleanup stops the simulator after gate completion, and all role/service logs remain separate.
+
+### Stage 16: Single-Step Binding Passed And G03 Attempt 3 Started
+
+- Single-step smoke `132966` completed on `gpu-pro6000-3` in 10 seconds. Its two tasks reported distinct GPU UUIDs and emitted `SAME_NODE_DUAL_GPU_OK`.
+- Submitted corrected G03 attempt 3 as job `132967`, depending on successful smoke `132966`. Slurm started it on `gpu-pro6000-10` with one node, two tasks, two Pro 6000 GPUs, eight CPUs, and 180 GiB node memory.
+- The 72B-AWQ simulator and 7B+corrected-LoRA policy both loaded successfully and returned healthy endpoints. Allocation, per-role, simulator, policy, rollout, gate-check, and Slurm logs are present and Job-ID scoped.
+- Old auto-submitted G03 `132946` remains pending with `DependencyNeverSatisfied` on failed smoke `132933`. It references the old launcher and will not be cancelled without explicit approval.
+
+### Stage 16: G03 Attempt 3 Completed With A Valid Gate Failure
+
+- G03 `132967` completed all 80 trajectories on `gpu-pro6000-10` using one physical node and two Pro 6000 GPUs. Both services were healthy; the single-step/two-task launcher and corrected tool-argument format worked end to end.
+- The gate failed three frozen thresholds: executable `0.844693 < 0.85`, mixed group `0.15 < 0.20`, and loop/max-turn `0.2625 > 0.20`. Parse `0.999375`, initial-user consistency `1.0`, and 14 successful trajectories passed.
+- Group outcomes were 15 all-fail, 2 all-success, and 3 mixed. Failure counts were argument error 32, loop/verbose 21, safety boundary 16, capability hallucination 7, and tool name 1.
+- All 12 `hallucination_missing_tool_parameter` trajectories failed with mean executable rate about 0.42, identifying the clearest corrective-data target. F10-F14 remain blocked; thresholds will not be relaxed and G03 will not be repeated unchanged.
+- Archived the 80 trajectories and machine-readable report locally under `reports/cluster/G03-132967/`.
+
+### Stage 17: F02/G04 Corrective Attempt Prepared
+
+- Reloaded `Project.md`, `Progress.md`, the experiment overview, Stage 04, and Stage 05 before changing the experiment route.
+- Rechecked the live `msc` association and Pro6000 inventory, then cancelled explicitly authorized stale job `132946`; Slurm now records it as `CANCELLED` and the user queue became empty.
+- Added a targeted F02 data builder. It merges environment-success trajectories from G00-G03 with two no-tool corrective dialogues for each G03 missing-tool family task while preserving task-disjoint train/validation groups.
+- Corrective records never include the failed assistant tool call because all assistant spans are supervised by the current Qwen SFT encoder. They teach direct capability-boundary refusal and stopping after user retry pressure.
+- Added a separate F02 config, CPU data/tokenizer job, two-step smoke -> full one-epoch submission chain, and automatic G04 submission through the proven single-node/two-task launcher.
+- F02 retains the same 7B base, LoRA rank/alpha `16/32`, learning rate `2e-4`, one epoch, and seed 42. G04 changes only the adapter and freezes the G03 20x4 tasks, sampling, outcome reward, and thresholds.
+- Local validation passed 28 unit tests, Python compilation, and all YAML parsing. Remote shell syntax, real Qwen tokenizer checks, and Slurm Job IDs remain pending.
+
+### Stage 17: F02 Completed And G04 Started
+
+- CPU job `133301` completed in 54 seconds and built 66 deduplicated successful records plus 14 corrective records. The 60/20 train/val split covers 9/2 tasks with zero overlap.
+- Real Qwen tokenization produced train lengths 3226-10468 and val lengths 3221-3297, zero overlength/no-target rows, and 80/16 round-tripped tool calls.
+- F02 smoke `133303` completed two steps on `gpu-pro6000-8` with train/eval loss `3.312624/2.140017` and peak memory `21.16 GiB`.
+- Full F02 `133306` completed 15 steps on `gpu-pro6000-8` using all 60/20 records. Train/eval loss was `1.088965/0.739128`, peak memory was `34.304 GiB`, and the final adapter was saved under `experiments/sft_corrective_full_f02_20260901_stage17/checkpoints/final_adapter`.
+- G04 `133308` was automatically submitted only after F02 completion. Slurm allocated one physical node `gpu-pro6000-7`, two Pro6000 GPUs, two tasks, eight CPUs, and 180 GiB node memory; Job-ID-scoped Slurm and component logs are configured.
+- G04 preserves the G03 20x4 task set, policy/simulator sampling, outcome reward, and all frozen thresholds. `POST_GATE_ACTION=none` prevents any unreviewed F10 submission.
+
+### Stage 17: G04 Completed With A Valid Scientific Failure
+
+- G04 `133308` completed all 80 trajectories on one physical node `gpu-pro6000-7` with two Pro6000 GPUs in 5m26s. Both vLLM services loaded and the single-step/two-task topology remained healthy.
+- The Slurm state is `FAILED` because the gate checker returned nonzero for a scientific FAIL, not because rollout crashed. Parse `0.995833`, initial-user consistency `1.0`, and 12 successful trajectories passed.
+- Executable `0.846829`, mixed group ratio `0.10`, and loop/max-turn `0.275` failed. Groups were 16 all-fail, 2 all-success, and 2 mixed.
+- Failure counts were argument error 33, loop/verbose 22, safety boundary 13, capability hallucination 8, and tool name 1.
+- F02 improved missing-tool executable behavior from `0.8175` to `0.8673`, but missing-tool-parameter fell from `0.4161` to `0.2681`. Relative to G03, total executable rose only `0.002136`, mixed fell `0.05`, loop rose `0.0125`, and success fell from 14 to 12.
+- F10-F14 remain blocked. The project will not relax thresholds, repeat G04 unchanged, or add epochs without an explicit new corrective-data hypothesis.
+- G04 trajectories and report are archived locally under `reports/cluster/G04-133308/` for paired failure analysis.
+
+### Stage 18: Corrected-F01 F10 Bounded Pilot Implemented Locally
+
+- 用户确认暂停 F03/G05；G03/G04 的 FAIL 报告和阈值保持不变，但阈值只作为正式放大诊断，不再禁止有明确风险边界的短 RL pilot。
+- 冻结初始化方案：把 corrected F01 `132942` 的 rank-16 LoRA safe-merge 回相同 Qwen2.5-7B 基座，生成不可覆盖且带文件哈希 manifest 的父模型；F10-F14 各自从该父模型创建 fresh rank-32 RL LoRA，不直接续训 F01 adapter。
+- 新增 F10 fallback vanilla config、merge 工具与单 GPU Slurm job、单节点双 GPU/单 `srun` pilot launcher、人工分离的 step-5 start 与 step-6 resume 提交器、每角色 GPU telemetry 和逐 trajectory reward audit。移除了 pilot 的自动 successor 路径。
+- `launch_verl.py` 现在允许实验级 policy parent 和仅系统语义的环境参数覆盖；group size、每步 task 数、sampling、长度、reward/advantage、LoRA、optimizer/LR、数据和 simulator 默认不变。
+- Pilot 验收固定为：5 optimizer steps；至少一步 reward variance、advantage、finite nonzero gradient 均有效；KL/clip/grad norm finite；无 NaN/OOM/schema error；保存并恢复至少再走一步；记录显存/利用率/step time/wait。五步内不要求任务性能提高。
+- 本地 32 项 unit tests、18 个 YAML 解析、F10 veRL dry-run rendering 与 Python compilation 全部通过。Windows 本地 WSL service 无权限，`bash -n` 按既有规则留给集群登录节点验证。Slurm 尚未提交；下一动作是实时集群 preflight、同步代码并提交 corrected-F01 parent merge，验证后才允许 F10 start。
+
+### Stage 18: Corrected-F01 Parent Merge Submitted
+
+- 实时 preflight 确认 `cluster02` / `msc`、用户队列为空、SSD `77.3/150 GB`、Qwen2.5-7B base 约 15 GB、corrected F01 adapter 约 165 MB 且 rank 16；目标 derived parent 不存在。
+- 本地/远端部署包 SHA-256 均为 `cc1196ca28aba2cdb57d22116d1de5ca3174b3babe736555cefd181e08de7565`。远端 Bash syntax、32 tests、18 YAML、F10 dry-run、merge/F10 `sbatch --test-only` 全部通过。
+- Corrected F01 parent merge 已提交为 job `133431`：1 node、1 task、1x Pro 6000、4 CPU、90 GiB memory、2 小时，当前 `PENDING (Priority)`。目标使用 PEFT safe merge、BF16 safetensors 和完整文件哈希 manifest。
+- merge job 排队/运行期间冻结远端脚本；完成并验证 parent 前不提交 F10。
+
+### Stage 18: Corrected-F01 Parent Merge Completed
+
+- Job `133431` 于 2026-09-01 04:26 UTC 在 `gpu-pro6000-4` 启动并用 64 秒完成，Slurm state `COMPLETED`、exit `0:0`；PEFT safe merge 和四个 safetensor shards 写出无错误。
+- 新父模型 `models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901` 约 15 GB。manifest 记录 corrected F01 rank 16、正确 adapter digest、base/adapter 路径、BF16 merge 方法、Job ID，以及 10 个模型/tokenizer文件的 size/SHA-256。
+- 下一步仍是独立 GPU load validation（全量 hash、model/tokenizer load）；通过前不提交 F10。
+- 已实现独立 validation 脚本与 1x Pro 6000 Slurm job：先严格比对 manifest 的文件集合/size/SHA-256，再以 BF16 实际加载 merged model/tokenizer 并执行 one-token generation，输出 machine-readable PASS report。
+
+### Stage 18: Parent Validation Attempt 1 Failed Before Artifact Read
+
+- Validation job `133439` 在 `gpu-pro6000-4` 启动后 1 秒以 exit `1:0` 失败，未生成 report；错误是 file-path entrypoint 无法 import `scripts.merge_lora_parent`。
+- 该失败发生在 manifest read/hash/model load 之前，没有修改 parent，也没有产生有效 GPU 指标；分类为代码封装缺陷，不是 artifact 或资源失败。
+- 已修复 validation entrypoint 的项目根目录 `sys.path` 初始化；其余 hash/load/generation 协议保持冻结。完成本地与远端回归后以新 Job ID 重试，PASS 前不提交 F10。
+
+### Stage 18: Parent Validation Attempt 2 Passed
+
+- Retry job `133447` 在 `gpu-pro6000-2` 用 53 秒完成，Slurm state `COMPLETED`、exit `0:0`、stderr 为空。
+- Report `reports/f01_parent_validation_133447.json` 为 `PASS`：10 个 inventory 文件、`15,242,726,337` bytes 的 exact set/size/SHA-256 全匹配；BF16 model 加载 `7,615,616,512` 参数，tokenizer size `151,665`，4-token input 成功生成 1 token。
+- Parent merge/load dependency 已闭合。下一动作是创建全新 F10 run 并提交恰好 5 optimizer steps；作业不得自动提交 resume 或正式 successor。
+
+### Stage 18: F10 Five-Step Pilot Submitted
+
+- 新 run `f10_pilot_20260901_stage18` 已提交为 job `133456`；manifest source/config SHA-256 分别为 `c35a937e...46935` / `7fd65bc8...9dc05`，target 5 optimizer steps。
+- 请求同一节点 2x Pro 6000、2 tasks、8 CPU、180 GiB；一个 `srun` 内 simulator/trainer 各绑 1 GPU。初始吞吐设置为 memory util `0.60`、16 seq、16384 batched tokens、16 workers、microbatch 1 和 offload enabled。
+- 科学设置保持 outcome-only、4 tasks x 4 rollouts、fresh rank-32 LoRA、LR `1e-6`、seed 42、32K/20-turn、相同 CAR 数据与 72B simulator。当前 job `PENDING`，无 automatic successor。
+
+### Stage 18: F10 Pilot Attempt 1 Failed Before veRL Import
+
+- Job `133456` 在 `gpu-pro6000-7` 运行 2m11s 后失败：trainer direct-file entrypoint 无法 import `src`；trainer task exit 1，simulator task 按 cleanup 收到 TERM，聚合 exit 15。
+- 同节点两个 task 的不同 GPU UUID、72B simulator load/health 与 telemetry 均成立；simulator 抽样峰值约 `93.3/97.9 GiB`，无 OOM。失败发生在 veRL/model/rollout/optimizer 之前，0/5 steps、无 checkpoint/reward audit。
+- Run manifest 已正确标记 failed，目录完整保留。已在 `launch_verl.py` 加入 ROOT `sys.path`，并让 dry-run 实际 import 项目 entrypoint以覆盖该缺陷；回归通过后用新 run/Job ID 重试。
+
+### Stage 18: F10 Pilot Attempt 2 Reached Ray And Failed On Socket Path
+
+- Job `133478` 在 `gpu-pro6000-11` 运行 3m56s；launcher/veRL/Hydra config validation 均通过，证明 attempt 1 修复有效。
+- Ray 初始化因 SSD `RAY_TMPDIR` 展开后的 plasma AF_UNIX socket path 超过 Linux 107-byte 上限而失败。0/5 steps、无 checkpoint/reward audit；simulator health 正常，manifest 标记 failed。
+- 修复限定为把 Ray ephemeral socket/session metadata 放到 `/tmp/cabin-ray-$SLURM_JOB_ID`；持久日志/checkpoints 继续留在 SSD，对象存储继续使用共享内存。新增静态回归后以新 run/Job ID 重试，科学参数不变。
+- 为避免第三次双 GPU 作业仅用于发现 Ray 启动问题，新增 10 分钟 CPU Slurm smoke：实际 `ray.init`、执行一个 remote task、`ray.shutdown` 并输出 machine-readable report。该 smoke PASS 后才提交 F10 attempt 3。
+
+### Stage 18: Ray Short-Path CPU Smoke Passed
+
+- CPU job `133503` 在 `cpu-1` 用 29 秒完成，Slurm `COMPLETED`、exit `0:0`。
+- Machine-readable report 为 PASS：tmpdir `/tmp/cabin-ray-133503`、session dir 保持短路径、Ray address 正常、remote task 返回 42 并完成 shutdown。
+- AF_UNIX 修复已用真实 Ray runtime 验证；允许创建新 run/Job ID 提交 F10 attempt 3，科学和吞吐参数不变。
+- 两个先前 attempt 的 simulator telemetry 均显示默认 memory util `0.92` 会达到约 `93.3/97.9 GiB`（95.4%，余量仅 4.6%）。按已确认的系统调优边界，attempt 3 将 simulator cap 降到 `0.86`，预计保留约 10% 动态余量；max seq 仍为 16，policy/trainer cap `0.60` 暂不改。
+
+### Stage 18: F10 Pilot Attempt 3 Reached Remote Task And Found Missing Dependency
+
+- Job `133512` 在 `gpu-pro6000-11` 运行 2m15s；Ray short path、veRL import/config validation 和 remote `TaskRunnerV1.run()` 均成功，证明前两次 infrastructure fixes 已闭合。
+- Ray worker 随后因 `ModuleNotFoundError: transfer_queue` 失败。命名环境为 veRL 0.9.0，但 installed metadata 未声明该依赖，`find_spec`/`pip show` 均确认未安装。
+- 仍为 0/5 steps、无 checkpoint/reward audit，manifest 标记 failed。下一步先审计官方 package/version，再通过独立 Slurm 环境修复与 import smoke；PASS 前不再占用双 GPU。
+
+### Stage 18: TransferQueue Repair Prepared
+
+- 官方 veRL Python requirements 明确固定 `TransferQueue==0.1.7`；稳定容器也采用显式版本与 `--no-deps` 安装，说明它是 veRL V1 trainer 的独立运行时依赖，而当前 wheel metadata 漏装。
+- 已把该版本加入 `requirements-gpu.txt`，新增 CPU Slurm 环境修复作业和 machine-readable import/API smoke；smoke 同时导入 `verl.trainer.main_ppo.TaskRunnerV1`，避免只验证孤立包。
+- 安装限定在既有项目 SSD Conda 环境，使用 `--no-deps` 避免改动冻结的 Torch/CUDA/vLLM 栈。该作业 PASS 并完成 attempt 记录前，不提交新的双 GPU F10。
+- CPU job `133532` 已成功安装 `TransferQueue-0.1.7` 且完成 veRL runner 联合导入，但 checker 把 Ray `ActorClass` wrapper 当作普通 class 读取 `__name__`，在写报告前失败；Slurm `FAILED`、exit `1:0`、耗时 1m19s。
+- 已修正该反射字段为 wrapper type；版本/API/联合导入标准不放宽。必须用新 CPU Job ID 产生 machine-readable PASS，才能解锁 F10 attempt 4。
+
+### Stage 18: TransferQueue CPU Smoke Passed
+
+- Retry job `133541` 在 `cpu-1` 用 1m04s 完成，Slurm `COMPLETED`、exit `0:0`；报告 `reports/transfer_queue_smoke_133541.json` 为 `PASS` 并已归档本地。
+- Installed/expected version 均为 `0.1.7`，六个 veRL 所需 KV API 全部存在，`verl.trainer.main_ppo.TaskRunnerV1` 以 `ActorClass(TaskRunnerV1)` 成功联合导入。stderr 仅为 CPU node 预期 accelerator warning。
+- 缺依赖阻塞已闭合，允许创建全新 run/Job ID 提交 F10 attempt 4；科学参数及 attempt 3 的 simulator `0.86`、policy/trainer `0.60` caps 保持不变，无自动 successor。
+
+### Stage 18: F10 Attempt 4 Found Slurm GPU Visibility Conflict
+
+- Job `133549` 在 `gpu-pro6000-11` 运行 2m40s；已越过 TransferQueue、103/26 数据加载与 worker-group 创建，但 worker actor 因环境同时包含 `CUDA_VISIBLE_DEVICES` 和 `ROCR_VISIBLE_DEVICES` 被 veRL 主动拒绝。
+- 仍为 0/5 steps、无 checkpoint/reward audit。Simulator 0.86 cap 峰值约 87.6/97.9 GiB（89.5%，10.5% headroom），双 UUID 正常且无 OOM；policy 尚未加载。
+- 修复限定为在 NVIDIA task 中保留 CUDA、清除 AMD 的 ROCR/HIP visibility。新增 1x Pro 6000 Ray/veRL hook smoke；该 JSON smoke PASS 前不提交 attempt 5。
+
+### Stage 18: NVIDIA Ray/veRL Visibility Smoke Passed
+
+- 单卡 job `133567` 在 `gpu-pro6000-2` 用 29 秒完成，Slurm `COMPLETED`、exit `0:0`，JSON report 为 `PASS` 并已归档本地。
+- 原始 Slurm 环境同时给出 CUDA `0` 与 ROCR `0`；清除 AMD vars 后，driver、Ray GPU actor 和 veRL visibility hook 后均只有 CUDA `0`，验证 Ray 不会重新注入 ROCR。
+- 允许创建全新 F10 attempt 5；模型/数据/reward/优化器/LoRA 与 simulator `0.86`、policy `0.60` 保持冻结，无自动 successor。
+
+### Stage 18: F10 Attempt 5 Found Missing FlashAttention2
+
+- Job `133581` 在 `gpu-pro6000-8` 运行 2m36s；visibility 修复有效，首次进入 exact 7B policy module build，但 Transformers 因 veRL 默认启用 FlashAttention2 而环境无 `flash_attn`，在权重加载前失败。
+- 仍为 0/5 steps、无 checkpoint/reward audit；policy GPU 约 3 MiB，simulator/topology 正常，无 OOM。当前栈为 Torch 2.11.0+cu130、CUDA 13.0、Transformers 5.10.4。
+- 官方 veRL stable vLLM image 固定并 force-build `flash_attn==2.8.3`；该 tag 支持 CUDA>=12.8 的 sm_120。已准备单卡 sm_120 本地编译、FA2 前后向 finite 与 exact parent load/generate smoke；PASS 前不提交 attempt 6。
+- 安装 attempt `133600` 在 42 秒内失败且未改动环境：外部 nvcc 12.8 与 Torch cu130 的 extension guard 不匹配。集群实时确认 `CUDA/13.0.0` 可直接加载；retry 仅对齐 trainer/编译 toolchain，simulator 继续使用已验证 CUDA 12.8。
+
+### Stage 18: FlashAttention2 Exact-Parent Smoke Passed
+
+- Retry job `133615` 在 `gpu-pro6000-2` 用 20m25s 完成，Slurm `COMPLETED`、exit `0:0`；sm_120-only 63.2 MB wheel 已安装为 `flash_attn-2.8.3`。
+- JSON `PASS`：Pro 6000 capability 12.0、BF16 FA2 forward/backward finite、Torch CUDA 13.0；exact merged F01 parent 以 FlashAttention2 加载并生成 1 token，peak allocated 15.29 GB。
+- FA2 阻塞已闭合，允许全新 F10 attempt 6。Trainer 使用 CUDA 13.0.0；simulator 保留 CUDA 12.8.0；科学参数和两侧 caps 不变，无 automatic successor。
+
+### Stage 18: F10 Attempt 6 Reached First Rollout Dispatch
+
+- Job `133674` 在 `gpu-pro6000-7` 运行 4m21s，首次完整初始化 actor/ref、policy vLLM、checkpoint/reward loop 并进入 fit；首批 AgentLoop worker 因缺 `CAR_BENCH_DATASET_ROOT` 无法 resolve Hydra config，0/5 steps。
+- Policy 初始化瞬时峰值约 90.2/97.9 GiB（92.2%，7.8% headroom），稳定约 87.8 GiB，无 OOM。当前不与 env 修复同时改 policy cap。
+- 已显式 export canonical CAR root，新增 CPU Slurm/Ray OmegaConf resolve smoke；路径/target/simulator URL 全部 PASS 前不提交 attempt 7。
+
+### Stage 18: AgentLoop Ray Environment Smoke Passed
+
+- CPU job `133700` 在 32 秒内 `COMPLETED`、exit `0:0`；真实 Ray worker 完整 resolve AgentLoop OmegaConf，JSON 为 `PASS` 并已归档。
+- Canonical CAR root 在 worker 中存在，CAR loop target 与 simulator URL 均正确。允许提交全新 F10 attempt 7；其他设置冻结，policy cap 暂不因初始化瞬时峰值单独调整。
+
+### Stage 18: F10 Attempt 7 Reached Training Batch And OOMed
+
+- Job `133709` 在 `gpu-pro6000-3` 使用同节点 2x Pro 6000 运行 `7m07s`，首次完成完整初始化、26-task 初始验证和首批 16 条训练 rollout；初始验证 reward mean@1 为 `0.230769`。
+- Step 1 old-log-prob 的未分块 entropy softmax 尝试额外分配 `20.44 GiB`，当时 trainer 卡仅余 `18.86 GiB`，因此 CUDA OOM；仍为 `0/5` optimizer steps，无 checkpoint/reward audit。
+- Simulator/trainer 抽样峰值分别为 `87,576/97,887 MiB`（89.47%）和 `96,055/97,887 MiB`（98.13%），两卡最大利用率 100%。完整 run 与 Slurm/component/telemetry 日志已归档到 `reports/cluster/F10-PILOT-133709/`。
+- 下一步先验证并启用 veRL 的 chunked entropy 路径，避免构造全量 softmax 中间张量；除这一数学等价的显存系统开关外，冻结科学设置与现有 memory caps。新 Job ID 提交前先完成配置回归与 attempt 记录。
+
+### Repository Hygiene And Public-Git Preparation
+
+- 用户批准清理本地部署传输包、旧 `.sync` 包和两个测试临时目录，并要求后续阶段成功时更新公开 GitHub 仓库。
+- 新增 `.gitignore`，排除根目录传输包、同步/临时目录、Python 缓存、本地环境、模型、checkpoints、experiments、官方/派生数据、运行缓存与常见凭据文件；保留源码、配置、阶段文档和精选实验报告。
+- 公开发布安全审计发现 `AGENTS.md` 含实际集群登录凭据；已替换为不含用户名、主机和密码的安全占位说明。首次提交前仍需执行全仓库敏感信息与大文件复核。
+- 初次清理审计时目录尚未初始化 Git；公开仓库名称确认后已进入本地初始化与首次发布检查。
+- 用户确认公开仓库名为 `CabinAgent-RL`、默认分支 `main`；本地 Git 已初始化。首次提交候选为 184 个文件、约 6.97 MiB，最大单文件约 2.17 MiB。
+- 全仓库发布扫描未发现私钥或 GitHub token；两处 `api_key="local-vllm"` 为本地 OpenAI-compatible vLLM 占位值。36 项 unit tests 与 `compileall` 全部通过。
+- README 已从早期脚手架描述更新到 Stage 18 的真实状态，明确记录 G02/F02 负结果、F10 当前 OOM 阻塞和“尚无正式 F10-F14/最终 benchmark 结论”的边界。
+- 新增 `.gitattributes`，公开仓库中的 Markdown、Python、shell/Slurm、YAML、JSON/JSONL 与表格文本统一为 LF，避免 Windows CRLF 造成全文件尾随空格误报或 Linux 脚本执行问题；safetensors fixture 明确按二进制处理。

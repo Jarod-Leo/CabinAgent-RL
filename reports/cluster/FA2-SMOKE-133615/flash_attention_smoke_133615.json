@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-09-01T06:11:44.838137+00:00",
+  "device_capability": [
+    12,
+    0
+  ],
+  "device_name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+  "expected_version": "2.8.3",
+  "generated_tokens": 1,
+  "installed_version": "2.8.3",
+  "kernel_forward_backward_finite": true,
+  "max_memory_allocated_bytes": 15287706112,
+  "model_attn_implementation": "flash_attention_2",
+  "model_path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901",
+  "schema_version": 1,
+  "slurm_job_id": "133615",
+  "status": "PASS",
+  "torch_cuda": "13.0",
+  "torch_version": "2.11.0+cu130"
+}

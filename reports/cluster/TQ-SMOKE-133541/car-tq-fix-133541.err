@@ -1,0 +1,2 @@
+WARNING:2026-09-01 05:18:42,637:No supported accelerator detected. Registered: ('nvidia', 'huawei', 'amd'). Falling back to 'nvidia'.
+WARNING:2026-09-01 05:18:42,638:Platform 'nvidia' (PlatformCUDA) is registered but not available. This may be due to this ray actor being a CPU-only actor.

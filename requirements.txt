@@ -1,0 +1,4 @@
+# Lightweight local baseline dependencies.
+# The smoke baseline uses only the Python standard library; keep this file
+# minimal so it works on Windows and CPU-only machines.
+

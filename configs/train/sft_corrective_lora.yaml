@@ -1,0 +1,29 @@
+enabled_by_default: false
+trigger: fallback_rollout_gate_failed
+model_name_or_path: models/Qwen/Qwen2.5-7B-Instruct
+train_data: data/sft/corrective_train.jsonl
+val_data: data/sft/corrective_val.jsonl
+method: corrective_lora_sft
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules: all-linear
+max_length: 32768
+epochs: 1
+learning_rate: 0.0002
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 4
+warmup_ratio: 0.03
+save_steps: 10
+logging_steps: 1
+seed: 42
+min_train_records: 20
+scope:
+  - successful_car_interaction
+  - missing_tool_boundary_refusal
+  - missing_parameter_boundary_refusal
+  - no_retry_after_unavailable_capability
+notes:
+  - F02 starts from the same frozen 7B base instead of stacking on the F01 adapter.
+  - G03 failures may be used because the gate task pool is drawn from CAR train, not dev/test.
+  - G04 must preserve the G03 task manifest, sampling, reward, and thresholds.

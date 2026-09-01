@@ -1,0 +1,7 @@
+experiment_id: E10
+name: vanilla_grpo
+parent_config: configs/train/grpo_common.yaml
+advantage_estimator: grpo
+reward_mode: outcome
+process_reward_weight: 0.0
+turn_discount_alpha: 1.0

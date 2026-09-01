@@ -1,0 +1,9 @@
+benchmark: carbench
+mode: sample
+data_path: data/raw/carbench_sample.jsonl
+trajectory_output: data/eval_cache/carbench_trajectories.jsonl
+report_output: reports/baseline_carbench.md
+failure_dir: failure_cases/baseline
+max_samples: null
+adapter: local_rules
+

@@ -1,0 +1,10 @@
+- name: car_bench
+  _target_: src.training.car_bench_agent_loop.CarBenchAgentLoop
+  dataset_root: ${oc.env:CAR_BENCH_DATASET_ROOT}
+  simulator_base_url: ${oc.env:SIMULATOR_BASE_URL}
+  simulator_model: ${oc.env:SIMULATOR_SERVED_MODEL_NAME,cabinagent-user-simulator}
+  split: train
+  max_turns: 20
+  tool_parser: hermes
+  simulator_initial_temperature: 0.0
+  simulator_temperature: 0.2

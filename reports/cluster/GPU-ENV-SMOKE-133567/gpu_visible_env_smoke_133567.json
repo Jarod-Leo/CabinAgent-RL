@@ -1,0 +1,23 @@
+{
+  "checked_at": "2026-09-01T05:32:19.613601+00:00",
+  "driver_env": {
+    "CUDA_VISIBLE_DEVICES": "0",
+    "HIP_VISIBLE_DEVICES": null,
+    "ROCR_VISIBLE_DEVICES": null
+  },
+  "ray_worker_env": {
+    "after_verl_hook": {
+      "CUDA_VISIBLE_DEVICES": "0",
+      "HIP_VISIBLE_DEVICES": null,
+      "ROCR_VISIBLE_DEVICES": null
+    },
+    "before_verl_hook": {
+      "CUDA_VISIBLE_DEVICES": "0",
+      "HIP_VISIBLE_DEVICES": null,
+      "ROCR_VISIBLE_DEVICES": null
+    }
+  },
+  "schema_version": 1,
+  "slurm_job_id": "133567",
+  "status": "PASS"
+}

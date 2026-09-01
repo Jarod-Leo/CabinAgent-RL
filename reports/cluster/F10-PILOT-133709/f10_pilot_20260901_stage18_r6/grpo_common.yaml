@@ -1,0 +1,37 @@
+schema_version: 1
+framework: verl
+framework_version: 0.9.0
+policy_model: models/Qwen/Qwen2.5-7B-Instruct
+initialization: direct_instruct_lora
+policy_revision: main
+simulator_model: Qwen/Qwen2.5-72B-Instruct-AWQ
+train_data: data/processed/carbench/train.parquet
+val_data: data/processed/carbench/dev.parquet
+agent_loop_config: configs/agent_loop/carbench.yaml
+seed: 42
+max_steps: 250
+save_freq: 50
+eval_freq: 50
+group_size: 4
+train_batch_size: 4
+policy_max_model_len: 32768
+max_prompt_length: 24576
+max_response_length: 8192
+max_turns: 20
+learning_rate: 0.000001
+lora_rank: 32
+lora_alpha: 32
+lora_target_modules: all-linear
+rollout_engine: vllm
+rollout_mode: async
+dtype: bfloat16
+checkpoints:
+  - 50
+  - 100
+  - 150
+  - 200
+  - 250
+notes:
+  - All formal ablations initialize new LoRA weights from the same Qwen2.5-7B-Instruct revision.
+  - Project-specific SFT is a rollout-gate fallback, not a default prerequisite.
+  - This project manifest is translated to veRL Hydra overrides by the training wrapper.

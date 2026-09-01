@@ -1,0 +1,84 @@
+{
+  "benchmark": "bfcl",
+  "expected_tool_calls": [
+    {
+      "arguments": {
+        "from_unit": "fahrenheit",
+        "to_unit": "celsius",
+        "value": 70
+      },
+      "name": "temperature.convert"
+    }
+  ],
+  "failures": [
+    {
+      "code": "F1_TOOL_NAME_ERROR",
+      "detail": "Expected tool sequence ['temperature.convert'], got [].",
+      "type": "Tool name is missing, wrong, or unsupported."
+    }
+  ],
+  "id": "bfcl_004_temperature_convert",
+  "messages": [
+    {
+      "content": "You are a function-calling assistant. Return valid tool calls when needed.",
+      "role": "system"
+    },
+    {
+      "content": "Convert 70 Fahrenheit to Celsius.",
+      "role": "user"
+    }
+  ],
+  "metadata": {
+    "category": "simple_function_call",
+    "expected_behavior": "tool_call"
+  },
+  "metrics": {
+    "argument_accuracy": 0.0,
+    "avg_turns": 1,
+    "disambiguation_success": 1.0,
+    "executable_tool_rate": 1.0,
+    "hallucination_rate": 0.0,
+    "num_expected_tool_calls": 1,
+    "num_predicted_tool_calls": 0,
+    "state_consistency": 1.0,
+    "success": 0.0,
+    "tool_accuracy": 0.0,
+    "tool_name_accuracy": 0.0
+  },
+  "model_response": {
+    "content": "当前本地基线没有足够信息安全执行这个请求，我会先说明限制并请求补充信息。",
+    "raw": {
+      "adapter": "local_rules",
+      "rule": "fallback"
+    },
+    "tool_calls": []
+  },
+  "predicted_tool_calls": [],
+  "split": "dev",
+  "tool_results": [],
+  "tools": [
+    {
+      "description": "Convert a temperature between scales.",
+      "name": "temperature.convert",
+      "parameters": {
+        "properties": {
+          "from_unit": {
+            "type": "string"
+          },
+          "to_unit": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "from_unit",
+          "to_unit"
+        ],
+        "type": "object"
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+cluster_root: /projects/jiatian001ssd/cabinagentrl/CabinAgent-RL
+partition: cluster02
+account: msc
+qos: msc
+topology: single_node_dual_gpu
+nodes: 1
+tasks_per_node: 2
+gres_per_node: gpu:pro6000:2
+constraint: highmem
+simulator_gpu_count: 1
+trainer_gpu_count: 1
+versions:
+  miniforge_module: Miniforge3/24.11.3-1
+  cuda_minimum: "12.8"
+  verl: "0.9.0"
+  vllm: "0.20.2"
+notes:
+  - Do not set Slurm memory or CPU flags; the cluster submit plugin assigns them.
+  - Both GPUs must be allocated on one physical node; cross-node GPU aggregation is forbidden.
+  - Launch one srun step with two GPU-bound tasks; task 0 is simulator and task 1 is policy/trainer.
+  - Use --ntasks=2 --gpus-per-task=1 --gpu-bind=single:1 and keep separate role/service logs.

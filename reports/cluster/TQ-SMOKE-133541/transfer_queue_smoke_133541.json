@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-09-01T05:18:51.526668+00:00",
+  "expected_version": "0.1.7",
+  "installed_version": "0.1.7",
+  "missing_api": [],
+  "module_path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages/transfer_queue/__init__.py",
+  "required_api": [
+    "init",
+    "kv_batch_get",
+    "kv_batch_put",
+    "kv_clear",
+    "kv_list",
+    "kv_put"
+  ],
+  "schema_version": 1,
+  "slurm_job_id": "133541",
+  "status": "PASS",
+  "verl_task_runner_wrapper": "ActorClass(TaskRunnerV1)"
+}

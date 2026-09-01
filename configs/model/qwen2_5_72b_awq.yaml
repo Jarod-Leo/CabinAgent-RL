@@ -1,0 +1,11 @@
+model_name_or_path: Qwen/Qwen2.5-72B-Instruct-AWQ
+served_model_name: cabinagent-user-simulator
+role: carbench_user_simulator
+trainable: false
+quantization: awq
+dtype: auto
+max_model_len: 8192
+trust_remote_code: true
+notes:
+  - The simulator generates user turns only and is not a policy evaluator.
+  - Keep model identity and simulator prompt fixed across E10-E14.

@@ -1,0 +1,7 @@
+experiment_id: E14
+name: prm_lite_lata
+parent_config: configs/train/grpo_common.yaml
+advantage_estimator: grpo_lata
+reward_mode: outcome_plus_prm_lite
+process_reward_weight: 0.3
+turn_discount_alpha: 1.05

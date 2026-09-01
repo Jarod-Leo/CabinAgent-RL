@@ -1,0 +1,85 @@
+{
+  "benchmark": "carbench",
+  "expected_tool_calls": [
+    {
+      "arguments": {
+        "level": 3,
+        "seat": "passenger"
+      },
+      "name": "seat.set_massage"
+    }
+  ],
+  "failures": [
+    {
+      "code": "F1_TOOL_NAME_ERROR",
+      "detail": "Expected tool sequence ['seat.set_massage'], got [].",
+      "type": "Tool name is missing, wrong, or unsupported."
+    }
+  ],
+  "id": "car_005_unhandled_massage",
+  "messages": [
+    {
+      "content": "You are CabinAgent, an in-car assistant. Use tools only when the request is clear and the tool is available.",
+      "role": "system"
+    },
+    {
+      "content": "把副驾座椅按摩开到三档。",
+      "role": "user"
+    }
+  ],
+  "metadata": {
+    "category": "vehicle_control",
+    "expected_behavior": "tool_call"
+  },
+  "metrics": {
+    "argument_accuracy": 0.0,
+    "avg_turns": 1,
+    "disambiguation_success": 1.0,
+    "executable_tool_rate": 1.0,
+    "hallucination_rate": 0.0,
+    "num_expected_tool_calls": 1,
+    "num_predicted_tool_calls": 0,
+    "state_consistency": 1.0,
+    "success": 0.0,
+    "tool_accuracy": 0.0,
+    "tool_name_accuracy": 0.0
+  },
+  "model_response": {
+    "content": "当前本地基线没有足够信息安全执行这个请求，我会先说明限制并请求补充信息。",
+    "raw": {
+      "adapter": "local_rules",
+      "rule": "fallback"
+    },
+    "tool_calls": []
+  },
+  "predicted_tool_calls": [],
+  "split": "dev",
+  "tool_results": [],
+  "tools": [
+    {
+      "description": "Set seat massage level.",
+      "name": "seat.set_massage",
+      "parameters": {
+        "properties": {
+          "level": {
+            "maximum": 3,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "seat": {
+            "enum": [
+              "driver",
+              "passenger"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "seat",
+          "level"
+        ],
+        "type": "object"
+      }
+    }
+  ]
+}

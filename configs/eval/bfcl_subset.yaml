@@ -1,0 +1,9 @@
+benchmark: bfcl
+mode: sample
+data_path: data/raw/bfcl_sample.jsonl
+trajectory_output: data/eval_cache/bfcl_trajectories.jsonl
+report_output: reports/baseline_bfcl.md
+failure_dir: failure_cases/baseline
+max_samples: null
+adapter: local_rules
+

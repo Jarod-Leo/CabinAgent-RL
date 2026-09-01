@@ -1,0 +1,11 @@
+model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+trust_remote_code: true
+dtype: bfloat16
+max_model_len: 32768
+chat_template: qwen
+tool_call_format: native
+policy_role: main
+notes:
+  - Direct initialization model for all five GRPO ablations.
+  - Project-specific SFT is used only if the real CAR rollout gate fails.
+  - Local smoke tests use the deterministic local adapter instead of loading this model.

@@ -1,0 +1,3 @@
+srun: error: gpu-pro6000-3: task 1: Exited with exit code 1
+srun: Terminating StepId=133709.0
+srun: error: gpu-pro6000-3: task 0: Exited with exit code 143

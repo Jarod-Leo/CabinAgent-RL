@@ -1,0 +1,40 @@
+# Local deployment and synchronization bundles
+/*.tar.gz
+/*.tgz
+/.sync/
+/tmp*/
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environments and runtime caches
+/envs/
+/.cache/
+/cache/
+/logs/
+/wandb/
+
+# Model, training, and generated dataset artifacts
+/models/
+/checkpoints/
+/experiments/
+/data/official/
+/data/processed/
+/data/eval_cache/
+
+# Local credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Editor and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

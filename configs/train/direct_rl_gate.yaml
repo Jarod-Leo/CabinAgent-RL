@@ -1,0 +1,26 @@
+schema_version: 1
+policy_model: Qwen/Qwen2.5-7B-Instruct
+task_count: 20
+group_size: 4
+min_trajectories: 80
+min_tool_call_parse_rate: 0.95
+min_executable_tool_rate: 0.85
+min_mixed_reward_group_ratio: 0.20
+min_consistent_initial_user_group_ratio: 1.0
+max_loop_or_max_turn_rate: 0.20
+min_successful_trajectories: 1
+failure_action: minimal_sft_fallback
+policy_sampling:
+  temperature: 1.0
+  top_p: 0.95
+  max_tokens: 1024
+  seed: 42
+  concurrency: 8
+  max_turns: 20
+simulator_sampling:
+  initial_temperature: 0.0
+  followup_temperature: 0.2
+notes:
+  - Gate rewards use deterministic environment outcome, not PRM-Lite.
+  - All four rollouts in a group share the same initial state and first user message.
+  - G01 keeps the frozen reward gate and changes only reproducible rollout sampling.

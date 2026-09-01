@@ -1,0 +1,26 @@
+enabled_by_default: false
+trigger: direct_rl_gate_failed
+model_name_or_path: models/Qwen/Qwen2.5-7B-Instruct
+train_data: data/sft/fallback_train.jsonl
+val_data: data/sft/fallback_val.jsonl
+method: minimal_lora_sft
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules: all-linear
+max_length: 32768
+epochs: 1
+learning_rate: 0.0002
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 4
+warmup_ratio: 0.03
+save_steps: 10
+logging_steps: 1
+seed: 42
+min_train_records: 10
+scope:
+  - tool_call_format
+  - basic_car_interaction
+notes:
+  - This fallback is permitted only when the selected machine-readable gate report is FAIL.
+  - A fallback run creates a separate experiment family and must not be mixed into E10-E14.

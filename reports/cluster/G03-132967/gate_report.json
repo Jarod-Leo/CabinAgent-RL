@@ -1,0 +1,16 @@
+{
+  "complete_group_count": 20,
+  "consistent_initial_user_group_ratio": 1.0,
+  "executable_tool_rate": 0.844693,
+  "loop_or_max_turn_rate": 0.2625,
+  "mixed_reward_group_ratio": 0.15,
+  "passed": false,
+  "reasons": [
+    "executable_tool_rate 0.8447 < 0.8500",
+    "mixed_reward_group_ratio 0.1500 < 0.2000",
+    "loop_or_max_turn_rate 0.2625 > 0.2000"
+  ],
+  "successful_trajectories": 14,
+  "tool_call_parse_rate": 0.999375,
+  "trajectory_count": 80
+}

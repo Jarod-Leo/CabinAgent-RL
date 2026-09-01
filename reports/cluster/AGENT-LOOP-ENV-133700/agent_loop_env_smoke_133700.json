@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-09-01T06:26:53.168637+00:00",
+  "expected_dataset_root": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/data/official/car-bench-dataset",
+  "expected_simulator_base_url": "http://127.0.0.1:29999/v1",
+  "ray_worker": {
+    "dataset_root": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/data/official/car-bench-dataset",
+    "dataset_root_exists": true,
+    "simulator_base_url": "http://127.0.0.1:29999/v1",
+    "target": "src.training.car_bench_agent_loop.CarBenchAgentLoop"
+  },
+  "schema_version": 1,
+  "slurm_job_id": "133700",
+  "status": "PASS"
+}
