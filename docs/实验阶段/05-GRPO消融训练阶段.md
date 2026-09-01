@@ -470,6 +470,29 @@
 - 下一 attempt 使用新 run/Job ID，除该显存系统开关外保持模型、数据、reward/advantage、sampling、有效 batch、长度、LoRA、优化器/LR、两侧 memory cap 和资源拓扑冻结；仍为 5 steps、无 successor，并继续采集相同 telemetry。
 - 新 attempt 提交前须完成配置渲染/测试并更新本记录；step 5 checkpoint 与 step-6 resume 未通过前，正式 F10-F14 继续阻塞。
 
+### F10 Vanilla pilot start attempt 8 / Slurm 134671
+
+#### 实验设置
+
+- 复用 attempt 7 的 validated corrected-F01 parent、fresh rank-32 LoRA、outcome-only GRPO、4 tasks x 4 rollouts、seed 42、LR `1e-6`、CAR 数据、32K/20-turn、simulator `0.86` 与 rollout `0.60` caps、offload 和同节点 2x Pro 6000 拓扑。
+- 唯一计划变更为 actor/ref 两侧 `entropy_from_logits_with_chunking=true`、`entropy_from_logits_chunk_size=2048`；target 仍为 5 optimizer steps，无 successor。
+
+#### 执行结果
+
+- 已核对远端 veRL 0.9 的 `dp_actor.yaml`、`dp_ref.yaml` 与 FSDP engine 实现，确认上述两个 Hydra 路径分别传播到 actor/ref engine，并调用内置 chunked entropy 路径。
+- 本地配置渲染回归、36 项 unit tests 与 `compileall src scripts` 均通过；远端 Bash syntax、真实 veRL dry-run、36 tests 与 `sbatch --test-only` 也通过，双侧配置解析为 `true/2048`。
+- 新 run `experiments/f10_pilot_20260901_stage18_r7` 已提交为 job `134671`。Slurm 确认 1 node、2 tasks、8 CPU、2x `gpu:pro6000`，当前 `PENDING (Priority)`；optimizer steps 仍为 0，无 checkpoint 或 reward audit。
+
+#### 改进原因
+
+- Attempt 7 的 OOM 位于未分块全词表 entropy softmax，额外申请 `20.44 GiB` 超过剩余 `18.86 GiB`；内置 chunked 路径直接针对这一瞬时中间张量，且无需缩小冻结的有效 batch 或序列长度。
+
+#### 改进措施
+
+- Launcher 和 F10 submitter 显式固定双侧 chunking `true/2048`，测试同时断言 actor/ref 两侧，防止只修一侧或默认值回退。
+- 已同步精确改动到 canonical SSD tree，并完成远端 dry-run/Hydra 解析、tests、Bash syntax 与 `sbatch --test-only`。Job `134671` 无 successor；排队/运行期间冻结所有执行脚本与代码。
+- 作业启动后继续采集相同 simulator/trainer telemetry，重点核对 old-log-prob 是否越过 attempt 7 OOM 点、首个 optimizer step 的 reward variance/advantage/grad norm/KL/clip，以及 5-step checkpoint。任何失败都先完成本阶段四节记录再决定下一动作。
+
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、50-step checkpoints、逐 checkpoint CAR dev/BFCL 结果和失败样例。不得只保留最佳 checkpoint。

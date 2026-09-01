@@ -109,6 +109,10 @@ def build_overrides(
         "actor_rollout_ref.actor.use_kl_loss=True",
         "actor_rollout_ref.actor.kl_loss_coef=0.001",
         "actor_rollout_ref.actor.use_dynamic_bsz=True",
+        "actor_rollout_ref.actor.entropy_from_logits_with_chunking="
+        + env_value("ENTROPY_FROM_LOGITS_WITH_CHUNKING", True),
+        "actor_rollout_ref.actor.entropy_from_logits_chunk_size="
+        + env_value("ENTROPY_FROM_LOGITS_CHUNK_SIZE", 2048),
         f"actor_rollout_ref.actor.ppo_max_token_len_per_gpu={sequence_length}",
         "actor_rollout_ref.actor.fsdp_config.param_offload="
         + env_value("ACTOR_PARAM_OFFLOAD", True),
@@ -119,6 +123,10 @@ def build_overrides(
         + env_value("PPO_MICRO_BATCH_SIZE_PER_GPU", 1),
         f"actor_rollout_ref.actor.ppo_mini_batch_size={common['train_batch_size']}",
         f"actor_rollout_ref.ref.log_prob_max_token_len_per_gpu={sequence_length}",
+        "actor_rollout_ref.ref.entropy_from_logits_with_chunking="
+        + env_value("ENTROPY_FROM_LOGITS_WITH_CHUNKING", True),
+        "actor_rollout_ref.ref.entropy_from_logits_chunk_size="
+        + env_value("ENTROPY_FROM_LOGITS_CHUNK_SIZE", 2048),
         "actor_rollout_ref.ref.fsdp_config.param_offload="
         + env_value("REF_PARAM_OFFLOAD", True),
         "actor_rollout_ref.ref.use_torch_compile=False",

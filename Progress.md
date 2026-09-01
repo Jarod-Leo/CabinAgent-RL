@@ -525,3 +525,16 @@
 - GitHub 官方授权确认账户为 `Jarod-Leo`；创建公开仓库 `https://github.com/Jarod-Leo/CabinAgent-RL`，默认分支 `main`，并设置本地 `origin`。
 - 首次公开 commit `ad0d12c6cd7b155472bd9ae0c12b50977241ff94` 已推送；`git ls-remote` 验证远端 `main` 与本地 HEAD 完全一致，工作区为 `main...origin/main` 且无未提交文件。
 - 后续每个阶段只有在实验记录、必要验证和成功判定全部完成后才创建并推送阶段 commit；失败 attempt 仍及时写入实验文档，但不会标记为阶段成功。
+
+### Stage 18: F10 Chunked-Entropy Retry Prepared Locally
+
+- 重新加载 Project、Progress、实验阶段总览与 Stage 05 文档，并实时核对 cluster02 account/QoS、GPU inventory、quota、SSD 和用户队列；当前用户队列为空，SSD 使用约 93/150 GB。
+- 核对远端 veRL 0.9 源码与 Hydra config，确认 FSDP actor/ref 分别读取 `actor_rollout_ref.actor/ref.entropy_from_logits_with_chunking` 与 `entropy_from_logits_chunk_size`，内置默认 chunk size 为 2048。
+- Launcher 现对 actor/ref 两侧显式启用 chunked entropy，F10 submitter 固定导出 `true/2048`；model、数据、4x4 group、sampling、长度、reward/advantage、LoRA、LR、offload、两侧 memory caps 与资源拓扑均未改变。
+- 新增双侧配置渲染回归；本地 36 项 unit tests 和 `compileall src scripts` 全部通过。下一步为远端同步、真实 Hydra 解析与 Slurm test-only，通过后提交全新 5-step/no-successor attempt。
+
+### Stage 18: F10 Chunked-Entropy Attempt 8 Submitted
+
+- 远端 Bash syntax、veRL dry-run、36 tests 与 `sbatch --test-only` 全部通过；真实渲染确认 actor/ref 两侧 chunked entropy 均为 `true`、chunk size 均为 `2048`。
+- 新 run `f10_pilot_20260901_stage18_r7` 已提交为 Slurm job `134671`：同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB node memory、target 5 steps、无 successor。
+- Job 当前因集群 Pro 6000 满载处于 `PENDING (Priority)`；用户队列中仅此作业。排队/运行期间冻结执行代码，启动后按既有 telemetry 与 optimizer 验收契约监测。
