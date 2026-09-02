@@ -589,3 +589,9 @@
 - 经用户确认，精确删除远端 `cache/pip` 和 5 个已作废或被正式结果替代的 SFT 目录，以及旧传输包和 Job `135987` 临时目录；删除前已将 114 项 manifest/config/metrics/小日志归档并校验到 `reports/cluster/SSD-CLEANUP-20260903/`。corrected F01、F02 正式负结果、模型、数据和当前 step-5 checkpoint 均保留。
 - SSD 占用从约 `124.5` 降至 `117.1 GiB`，释放约 `7.4 GiB`；全项目当前只有 `f10_pilot_20260902_stage18_r8/checkpoints/global_step_5` 一个 GRPO checkpoint。
 - Launcher 新增 actor/critic checkpoint retention=`1`；F10 start/resume 分别使用 save frequency `5/-1`。Step-6 resume 将保留已验收 step-5 恢复点但不新建第二份约 30 GiB checkpoint。相关 training-config tests 与 Python compilation 已通过，下一步是远端回归、Slurm test-only 和独立 resume 提交。
+
+### Stage 18: F10 Step-6 Resume Submitted
+
+- Git `c6800f8` 已推送公开 GitHub；远端 36 tests、compileall、Bash syntax、veRL rendering、retention 字段源码核对和 Slurm test-only 全部通过。
+- 同一 run 的 resume 已提交为 Job `136347`，2026-09-02 16:43:12 UTC 起处于 `PENDING (Priority)`；目标从 `global_step_5` 自动恢复到 total step 6，同节点 2x Pro 6000、无依赖、无 successor。
+- Resume 冻结 attempt 9 的模型/数据/采样/reward/advantage/优化器/显存参数，使用 `SAVE_FREQ=-1` 和 retention `1/1`；验收时必须证明 step 6 完成且仍只存在原 step-5 checkpoint。

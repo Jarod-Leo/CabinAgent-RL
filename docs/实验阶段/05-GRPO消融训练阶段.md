@@ -594,6 +594,28 @@
 - 提交器按 start/resume 分支分别使用 `save_freq=5/-1`，并新增 `MAX_ACTOR_CKPT_TO_KEEP=1`、`MAX_CRITIC_CKPT_TO_KEEP=1` 的显式导出与配置渲染回归。
 - 同步集群后必须执行 Bash syntax、unit tests、veRL dry-run 和 `sbatch --test-only`；全部通过才提交 resume。作业完成后验证从 step 5 加载、step 6 指标落盘、原 step-5 checkpoint 仍存在且全项目没有新增第二个 GRPO checkpoint。
 
+### F10 step-6 resume attempt 1 / Slurm 136347
+
+#### 实验设置
+
+- 同一 run `f10_pilot_20260902_stage18_r8` 从 `global_step_5` 自动恢复，目标 total steps=`6`；实际恢复代码版本为 Git `c6800f8`，部署包 SHA-256 `5f6e21e34522b54b14f34970e7b2137aec7926b9180ba10ec4759ae189b9c96e`。Run manifest 保留创建时的 source/config digest，并通过 `submissions.tsv` 单独记录 resume Job。
+- 科学与系统训练设置完全继承 attempt 9；唯一恢复期存储设置为 `SAVE_FREQ=-1`、actor/critic retention=`1`。资源仍为 cluster02/msc、同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB、6 小时，单一双 task `srun`，无 successor。
+
+#### 执行结果
+
+- 提交前远端 36 tests、`compileall`、Bash syntax、veRL override rendering 与 `sbatch --test-only` 全部通过；渲染确认 total steps `6`、resume auto、save frequency `-1`、retention `1/1`、packed/chunked 路径不变。Installed veRL 源码与默认配置均确认支持两个 retention 字段。
+- Job `136347` 于 2026-09-02 16:43:12 UTC 提交，当前 `PENDING (Priority)`、无 dependency，申请资源为 1 node/2 Pro 6000/2 tasks/8 CPU/180 GiB。`submissions.tsv` 已追加 resume 行；当前仍仅有 `global_step_5` 一个 GRPO checkpoint。
+
+#### 改进原因
+
+- 五步 attempt 9 已验证从 fresh LoRA 训练和保存 checkpoint；pilot 闭环还缺独立 Slurm 进程实际加载 optimizer/model/data 状态并继续完成 step 6 的证据。
+- SSD 仅余约 32.9 GiB，而一个完整 checkpoint 约 30 GiB；恢复验证若创建第二份 checkpoint 会使存储余量接近零，因此该单步仅验证可恢复性与继续训练，不保存新的恢复点。
+
+#### 改进措施
+
+- 排队/运行期间冻结执行脚本与代码。完成后核对 Slurm 状态、checkpoint load 日志、step-6 reward/advantage/gradient/KL/step time、final validation、双卡 telemetry 与 checkpoint 目录数量。
+- PASS 标准：真实从 step 5 加载且完成第 6 个 optimizer step，无 NaN/OOM/schema error，原 step-5 checkpoint 完整存在且没有新增 `global_step_6`；无论成功或失败，先完成本 attempt 四节结果更新再决定正式 F10-F14。
+
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、每个评测点的 CAR dev/BFCL 结果和失败样例；完整可恢复 checkpoint 在 SSD 仅保留最新 1 个，失败/被轮换 checkpoint 的小型元数据与结论继续归档，不删除 attempt 历史。

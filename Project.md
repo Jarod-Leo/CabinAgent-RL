@@ -152,7 +152,7 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 五步 PASS、step-6 resume 准备中 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 五步 PASS、step-6 resume 已排队 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
 统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；corrected-F01 初始化的 5-step F10 pilot 已 PASS，当前只授权同一 run 的 step-6 恢复验证，正式 F10-F14 仍等待恢复测试的人工验收。
@@ -228,5 +228,6 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - F10 attempt 9 `135987` 已在 `gpu-pro6000-11` 完成 5/5 steps 并保存约 30 GiB 的 `global_step_5` checkpoint；step 1/2/3/5 均有 mixed reward、正负 advantage 与有限非零 gradient，无 NaN/OOM/schema error，五步集成门禁 PASS。Initial/final CAR dev mean@1 `0.230769/0.269231` 仅作诊断，不宣称性能提升；训练完成后的 Ray shutdown traceback 记为非致命 warning。
 - SSD 已按确认策略从约 `124.5` 清至 `117.1 GiB`，作废 SFT 产物删除前已归档小型元数据；corrected F01、F02 正式结果、模型/数据及 step-5 checkpoint 保留。后续完整可恢复 checkpoint 在 SSD 每 run 仅保留最新 `1` 个。
 - Step-6 resume 已解锁：从同一 run 的 step-5 checkpoint 恢复，仅验证第 6 个 optimizer step；为避免生成第二份约 30 GiB checkpoint，resume 使用 `SAVE_FREQ=-1` 并显式设置 actor/critic retention 为 `1`。正式 F10-F14 仍等待 resume 通过。
+- Step-6 resume 已提交为 Slurm `136347`，当前 `PENDING (Priority)`、无依赖与 successor；运行代码为 Git `c6800f8`，目标是从 step 5 加载并完成 step 6，同时保留唯一的 step-5 checkpoint。
 - Pilot 只允许调整不改变实验语义的系统吞吐参数；group size、每步 task 数、有效 batch、sampling、长度/轮数、reward/advantage、LoRA、优化器/LR、数据和 simulator 全部冻结。初始目标保留约 10%-15% 动态显存余量，根据 telemetry 在 pilot/resume 边界人工调整，正式分支使用统一冻结设置。
 - F10 pilot 与 step-6 resume 未实际通过前，不得宣称 fallback GRPO 闭环已跑通，也不得自动提交正式 F10-F14。若 F10 基础设施健康但 outcome advantage 全零，下一候选仅为独立 5-step F13 PRM-Lite pilot；只有 F13 仍无有效梯度时才讨论模型迁移，当前不展开。
