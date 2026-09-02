@@ -91,7 +91,9 @@ def main() -> None:
             grad_sq += float(parameter.grad.float().square().sum().item())
     lora_grad_norm = math.sqrt(grad_sq)
 
-    engine_source = inspect.getsource(transformer_impl.FSDPEngine.prepare_model_outputs)
+    engine_source = inspect.getsource(
+        transformer_impl.FSDPEngineWithLMHead.prepare_model_outputs
+    )
     packed_branch_contract = all(
         marker in engine_source
         for marker in (

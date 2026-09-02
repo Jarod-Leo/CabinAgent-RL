@@ -128,6 +128,11 @@ class TrainingConfigTests(unittest.TestCase):
         self.assertIn("ENTROPY_FROM_LOGITS_WITH_CHUNKING:-true", submitter)
         self.assertIn("ENTROPY_FROM_LOGITS_CHUNK_SIZE:-2048", submitter)
 
+        packed_smoke = (ROOT / "scripts/check_packed_entropy.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("FSDPEngineWithLMHead.prepare_model_outputs", packed_smoke)
+
     def test_ray_uses_short_job_scoped_socket_path(self) -> None:
         runtime_env = (ROOT / "scripts/cluster_runtime_env.sh").read_text(encoding="utf-8")
         self.assertIn("/tmp/cabin-ray-${SLURM_JOB_ID:-manual}", runtime_env)

@@ -508,6 +508,7 @@
 #### 执行结果
 
 - 本地 training-config regression 与 Python compilation 通过；尚未提交 Slurm，因此暂无 Job ID 或 GPU 结果。
+- 远端登录节点 API preflight 确认 chunk helper 签名正确，但输出方法实际归属 `FSDPEngineWithLMHead`；已在 GPU 提交前修正 checker 的反射目标，未产生无效 Slurm attempt。
 
 #### 改进原因
 

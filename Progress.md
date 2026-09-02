@@ -557,3 +557,4 @@
 - F10 launcher 和 submitter 已默认启用 `USE_REMOVE_PADDING=true`，actor/ref 的 chunked entropy 仍冻结为 `true/2048`；模型、数据、4x4 rollout、seed、LR、reward、LoRA、长度、offload、memory caps 和双卡拓扑均未改变。
 - 新增单卡 `slurm_packed_entropy_smoke.sbatch` 与机器可读 checker，覆盖 exact corrected-F01 parent、FlashAttention2、fresh rank-32/alpha-32 LoRA、packed valid-token entropy/log-prob、有限非零 LoRA gradient，并检查 veRL FSDP packed 分支源码契约。
 - 本地 training-config tests 与 Python compile 已通过。下一步是在集群重新核对实时规则、同步代码并运行该 smoke；JSON PASS 前不提交新的双卡 F10。
+- 2026-09-02 远端 API preflight 确认 chunk helper 签名为 `(logits, chunk_size=2048)`，真实 `prepare_model_outputs` 所属类为 `FSDPEngineWithLMHead`；在占用 GPU 前修正 checker 反射目标并增加静态回归，未产生无效 Slurm attempt。
