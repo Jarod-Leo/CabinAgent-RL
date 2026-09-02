@@ -1,0 +1,32 @@
+{
+  "checked_at": "2026-09-02T12:14:37.678420+00:00",
+  "device_capability": [
+    12,
+    0
+  ],
+  "device_name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+  "entropy_chunk_size": 2048,
+  "entropy_finite": true,
+  "finite_lora_gradients": true,
+  "log_probs_finite": true,
+  "lora_alpha": 32,
+  "lora_gradient_norm": 2.508679700952618,
+  "lora_rank": 32,
+  "loss_finite": true,
+  "max_memory_allocated_bytes": 16028334592,
+  "max_memory_reserved_bytes": 16162750464,
+  "model_attn_implementation": "flash_attention_2",
+  "model_path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901",
+  "packed_valid_tokens": 25,
+  "schema_version": 1,
+  "sequence_lengths": [
+    10,
+    17
+  ],
+  "slurm_job_id": "135977",
+  "status": "PASS",
+  "torch_cuda": "13.0",
+  "torch_version": "2.11.0+cu130",
+  "trainable_parameters": 80740352,
+  "verl_packed_branch_contract": true
+}

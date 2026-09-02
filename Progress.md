@@ -564,3 +564,9 @@
 - 代码-only bundle SHA-256 `179d8b6c6ee2e4005ef9041ea33475102abc55788a1723317946b4570afd90c3` 已同步至集群；远端 Bash、36 tests、compileall、veRL dry-run 与 Slurm test-only 全部通过。
 - 单卡 packed-path smoke job `135977` 已提交，当前 `PENDING (Priority)`；资源为 1x Pro 6000、4 CPU、33 GiB、30 分钟，无依赖与 successor。
 - 队列等待期间冻结执行代码；machine-readable JSON PASS 前不提交双卡 F10。
+
+### Stage 18: Packed-Path GPU Smoke Passed
+
+- Job `135977` 于 `gpu-pro6000-3` 运行 44 秒后 `COMPLETED`、exit `0:0`，machine-readable report 为 `PASS`。
+- Exact corrected-F01 parent/FA2、fresh rank32/alpha32 LoRA、veRL packed branch、chunked entropy/log-prob 与 backward 全部通过；LoRA gradient norm `2.50868`，峰值 allocated/reserved 约 `14.93/15.05 GiB`。
+- 四份原始产物已归档到 `reports/cluster/PACKED-ENTROPY-SMOKE-135977/`。Packed-path 前置门禁已闭合，允许在文档同步后创建新的双卡 5-step F10 run；无 successor。

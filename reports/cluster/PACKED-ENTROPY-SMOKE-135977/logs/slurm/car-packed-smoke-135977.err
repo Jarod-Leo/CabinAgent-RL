@@ -1,0 +1,14 @@
+/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages/verl/workers/engine/__init__.py:31: UserWarning: torchtitan engine is not available: ModuleNotFoundError("No module named 'torchtitan'")
+  warnings.warn(f"torchtitan engine is not available: {e!r}", stacklevel=1)
+/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages/verl/workers/engine/__init__.py:40: UserWarning: veomni engine is not available: ModuleNotFoundError("No module named 'veomni'")
+  warnings.warn(f"veomni engine is not available: {e!r}", stacklevel=1)
+/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages/verl/workers/engine/__init__.py:49: UserWarning: automodel engine is not available: ModuleNotFoundError("No module named 'nemo_automodel'")
+  warnings.warn(f"automodel engine is not available: {e!r}", stacklevel=1)
+/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages/verl/workers/engine/mindspeed/transformer_impl.py:24: UserWarning: NPU not support router replay for now.
+  from verl.utils.megatron.router_replay_patch import RouterReplay
+/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages/verl/workers/engine/__init__.py:59: UserWarning: mindspeed engine is not available: ModuleNotFoundError("No module named 'megatron'")
+  warnings.warn(f"mindspeed engine is not available: {e!r}", stacklevel=1)
+/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/envs/cabinagentrl/lib/python3.11/site-packages/verl/workers/engine/__init__.py:69: UserWarning: megatron engine is not available: ModuleNotFoundError("No module named 'megatron'")
+  warnings.warn(f"megatron engine is not available: {e!r}", stacklevel=1)
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   6%|▌         | 20/339 [00:00<00:01, 190.75it/s]Loading weights:  16%|█▌        | 54/339 [00:00<00:01, 261.67it/s]Loading weights:  24%|██▍       | 81/339 [00:00<00:01, 227.93it/s]Loading weights:  31%|███       | 105/339 [00:00<00:01, 189.85it/s]Loading weights:  38%|███▊      | 129/339 [00:00<00:01, 200.94it/s]Loading weights:  44%|████▍     | 150/339 [00:00<00:01, 162.10it/s]Loading weights:  55%|█████▍    | 185/339 [00:00<00:00, 196.43it/s]Loading weights:  61%|██████    | 206/339 [00:01<00:00, 193.94it/s]Loading weights:  67%|██████▋   | 228/339 [00:01<00:00, 189.99it/s]Loading weights:  73%|███████▎  | 248/339 [00:01<00:00, 191.22it/s]Loading weights:  79%|███████▉  | 268/339 [00:01<00:00, 181.39it/s]Loading weights:  88%|████████▊ | 299/339 [00:01<00:00, 194.93it/s]Loading weights:  94%|█████████▍| 319/339 [00:01<00:00, 184.31it/s]Loading weights: 100%|██████████| 339/339 [00:01<00:00, 200.56it/s]

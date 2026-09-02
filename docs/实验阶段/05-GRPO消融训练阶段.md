@@ -529,6 +529,9 @@
 
 - 本地与远端 36 项 tests、`compileall`、Bash syntax、真实 veRL dry-run 和 `sbatch --test-only` 全部通过；远端渲染明确为 remove-padding `true` 且 actor/ref chunking `true/2048`。
 - Job `135977` 于 2026-09-02 12:13:01 UTC 提交，当前 `PENDING (Priority)`；请求 1 node、1 GPU、4 CPU、33 GiB node memory，无依赖且无 successor。集群 test-only 当时预测资源约在 2026-09-03 20:20 可用。
+- Job 实际于 12:13:55 UTC 在 `gpu-pro6000-3` 启动，运行 44 秒后 `COMPLETED`、exit `0:0`。`reports/packed_entropy_smoke_135977.json` 为 `PASS`。
+- Exact parent 使用 FlashAttention2；两条序列长度为 10/17，shift 后 packed valid tokens 为 25。Entropy、log-prob、loss 与 LoRA gradients 全部有限，fresh LoRA gradient norm 为 `2.508679700952618`，trainable parameters 为 `80,740,352`。
+- CUDA peak allocated/reserved 为 `16,028,334,592/16,162,750,464` bytes（约 14.93/15.05 GiB）。stderr 只有未安装的可选 engine warning、dtype deprecation 和正常权重进度，无 CUDA/FA2/OOM 错误；完整 JSON、allocation 与 Slurm 日志已归档到 `reports/cluster/PACKED-ENTROPY-SMOKE-135977/`。
 
 #### 改进原因
 
@@ -537,6 +540,7 @@
 #### 改进措施
 
 - 排队和运行期间冻结 checker、Slurm 脚本与训练 launcher。只有 `reports/packed_entropy_smoke_135977.json` 为 PASS 且 Slurm `COMPLETED` 后，才记录本 attempt 完成并提交新的双卡 5-step F10；否则先记录失败并修复，不跨过门禁。
+- 本 attempt 已闭合 packed-path 单卡门禁。完成本记录及 Project/Progress/tracker/总览同步后，允许以新 run/Job ID 提交 5-step F10；科学与既有吞吐参数保持冻结，仍无 automatic successor。
 
 ## 结果记录要求
 

@@ -1,0 +1,37 @@
+job_id=135977
+node=gpu-pro6000-3
+JobId=135977 JobName=car-packed-smoke
+   UserId=jiatian001(295800056) GroupId=jiatian001(295800056) MCS_label=N/A
+   Priority=1 Nice=0 Account=msc QOS=msc
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   DerivedExitCode=0:0
+   RunTime=00:00:01 TimeLimit=00:30:00 TimeMin=N/A
+   SubmitTime=2026-09-02T12:13:01 EligibleTime=2026-09-02T12:13:01
+   AccrueTime=2026-09-02T12:13:01
+   StartTime=2026-09-02T12:13:55 EndTime=2026-09-02T12:43:55 Deadline=N/A
+   PreemptEligibleTime=2026-09-02T12:13:55 PreemptTime=None
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-02T12:13:55 Scheduler=Backfill
+   Partition=cluster02 AllocNode:Sid=login-3:3625773
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=gpu-pro6000-3
+   BatchHost=gpu-pro6000-3
+   NumNodes=1 NumCPUs=4 NumTasks=1 CPUs/Task=4 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=4,mem=33G,node=1,billing=8,gres/gpu=1,gres/gpu:pro6000=1
+   AllocTRES=cpu=4,mem=33G,node=1,billing=8,gres/gpu=1,gres/gpu:pro6000=1
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   JOB_GRES=gpu:pro6000:1
+     Nodes=gpu-pro6000-3 CPU_IDs=8-11 Mem=33792 GRES=gpu:pro6000:1(IDX:2)
+   MinCPUsNode=4 MinMemoryNode=33G MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
+   Command=/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/scripts/slurm_packed_entropy_smoke.sbatch
+   WorkDir=/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL
+   StdErr=/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/logs/slurm/car-packed-smoke-135977.err
+   StdIn=/dev/null
+   StdOut=/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/logs/slurm/car-packed-smoke-135977.out
+   Power=
+   TresPerNode=gres/gpu:pro6000:1
+   
+
+GPU 0: NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (UUID: GPU-d9b859d6-a531-d718-ed60-85a579b1c8f0)
