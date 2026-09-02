@@ -498,6 +498,25 @@
 - 下一候选修复有两条：推荐启用 veRL 已支持的 `use_remove_padding=True` packed 路径，使现有 chunking 真正生效并同时去除 padding；备选是在项目运行时为 dense 分支补齐 chunked 调用。前者改动更小且不修改安装环境，但必须先确认用户接受这一数学等价的表示/系统路径变化，并用单 GPU packed-path smoke 验证 exact parent、FA2、LoRA 和 finite log-prob/entropy 后才允许新的双 GPU attempt。
 - 模型、数据、4x4 effective batch、sampling、长度/轮数、reward/advantage、LoRA、optimizer/LR、simulator 和现有 memory caps 继续冻结；未获确认前不修改代码或提交下一作业。
 
+### F10 packed-path preflight / local preparation
+
+#### 实验设置
+
+- 代码路径将 `actor_rollout_ref.model.use_remove_padding` 改为环境可控且默认 `true`；F10 submitter 显式导出该值。actor/ref chunked entropy 保持 `true/2048`，其余 attempt 8 科学设置与资源上限全部冻结。
+- 新增单节点单卡 Pro 6000、30 分钟的 packed-path integration smoke；模型固定为 corrected F01 merged parent，并挂载 fresh rank-32/alpha-32、all-linear LoRA。
+
+#### 执行结果
+
+- 本地 training-config regression 与 Python compilation 通过；尚未提交 Slurm，因此暂无 Job ID 或 GPU 结果。
+
+#### 改进原因
+
+- Attempt 8 已证明 dense-padding 分支不消费 chunked-entropy 配置。必须在再次占用双卡前验证 veRL 原生 packed 分支、FA2、exact parent、LoRA backward 和 entropy/log-prob 数值健康。
+
+#### 改进措施
+
+- Smoke 输出 machine-readable JSON，并要求 exact parent 以 FA2 加载、packed 分支源码契约存在、entropy/log-prob/loss 有限、LoRA gradient 有限且非零；仅 PASS 后允许创建新的 5-step F10 run/Job ID。
+
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、50-step checkpoints、逐 checkpoint CAR dev/BFCL 结果和失败样例。不得只保留最佳 checkpoint。

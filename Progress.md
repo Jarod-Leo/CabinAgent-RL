@@ -545,3 +545,15 @@
 - 当前 veRL FSDP 的 packed/remove-padding 分支实现 chunked entropy，但项目冻结的 dense-padding 分支无条件调用未分块 entropy；step 1 因额外申请 `20.80 GiB`、仅余 `18.15 GiB` 再次 OOM，仍为 `0/5`，无 checkpoint/gradient/reward audit。
 - Simulator/trainer telemetry 峰值为 `87,576/97,887 MiB`（89.47%）与 `90,565/97,887 MiB`（92.52%）；完整日志已归档 `reports/cluster/F10-PILOT-134671/`，用户队列已清空。
 - 推荐下一步是启用 veRL 原生 `use_remove_padding=True` packed 路径，并先做单 GPU exact-parent/FA2/LoRA/log-prob/entropy smoke；该系统路径变化需用户确认后实施，科学设置和 memory caps 保持冻结。
+
+### 2026-09-02 Packed-Path Repair Confirmed
+
+- User confirmed `use_remove_padding=True` as the next semantics-preserving system-path fix.
+- Execution contract: update the launcher and regression tests, build a one-GPU exact-parent/FA2/LoRA finite log-prob/entropy integration smoke, and submit a fresh five-step same-node two-GPU F10 only if the smoke produces a machine-readable PASS.
+- Frozen controls: data, model parent, fresh rank-32 LoRA, 4x4 effective batch, sampling, 32K/20-turn limits, reward/advantage, optimizer/LR, simulator, memory caps, and no-successor boundary.
+
+### Stage 18: Packed-Path Repair Prepared Locally
+
+- F10 launcher 和 submitter 已默认启用 `USE_REMOVE_PADDING=true`，actor/ref 的 chunked entropy 仍冻结为 `true/2048`；模型、数据、4x4 rollout、seed、LR、reward、LoRA、长度、offload、memory caps 和双卡拓扑均未改变。
+- 新增单卡 `slurm_packed_entropy_smoke.sbatch` 与机器可读 checker，覆盖 exact corrected-F01 parent、FlashAttention2、fresh rank-32/alpha-32 LoRA、packed valid-token entropy/log-prob、有限非零 LoRA gradient，并检查 veRL FSDP packed 分支源码契约。
+- 本地 training-config tests 与 Python compile 已通过。下一步是在集群重新核对实时规则、同步代码并运行该 smoke；JSON PASS 前不提交新的双卡 F10。

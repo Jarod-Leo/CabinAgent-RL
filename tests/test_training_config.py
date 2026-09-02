@@ -110,6 +110,7 @@ class TrainingConfigTests(unittest.TestCase):
                 validate_paths=False,
             )
         rendered = "\n".join(overrides)
+        self.assertIn("actor_rollout_ref.model.use_remove_padding=true", rendered)
         self.assertIn("actor_rollout_ref.rollout.gpu_memory_utilization=0.60", rendered)
         self.assertIn("actor_rollout_ref.rollout.max_num_batched_tokens=16384", rendered)
         for role in ("actor", "ref"):
@@ -123,6 +124,7 @@ class TrainingConfigTests(unittest.TestCase):
             )
 
         submitter = (ROOT / "scripts/submit_f10_pilot.sh").read_text(encoding="utf-8")
+        self.assertIn("USE_REMOVE_PADDING:-true", submitter)
         self.assertIn("ENTROPY_FROM_LOGITS_WITH_CHUNKING:-true", submitter)
         self.assertIn("ENTROPY_FROM_LOGITS_CHUNK_SIZE:-2048", submitter)
 

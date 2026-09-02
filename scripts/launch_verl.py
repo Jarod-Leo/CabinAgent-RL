@@ -87,7 +87,8 @@ def build_overrides(
         f"actor_rollout_ref.model.lora_alpha={common['lora_alpha']}",
         f"actor_rollout_ref.model.target_modules={common['lora_target_modules']}",
         "actor_rollout_ref.model.enable_activation_offload=True",
-        "actor_rollout_ref.model.use_remove_padding=False",
+        "actor_rollout_ref.model.use_remove_padding="
+        + env_value("USE_REMOVE_PADDING", True),
         "actor_rollout_ref.rollout.name=vllm",
         "actor_rollout_ref.rollout.mode=async",
         "actor_rollout_ref.rollout.load_format=safetensors",

@@ -53,7 +53,7 @@ Build the first runnable baseline slice for CabinAgent-RL from `Project.md`: pro
 | Frozen F01 parent | complete | Merge `133431` and validation `133447` passed; exact 10-file hash inventory, BF16 model/tokenizer load, and one-token generation are verified. |
 | Local trainer audit | complete | Implement fresh rank-32 RL LoRA over the merged F01 parent, same-node two-task launcher, telemetry, 5-step cap, checkpoint save, and resume path without altering scientific semantics. |
 | Local tests and remote pre-flight | complete | Relevant unit tests/compile/YAML pass; live QoS/GPU/storage rules and queue are rechecked; remote shell syntax and `sbatch --test-only` pass. |
-| F10 pilot launch | in_progress | Attempt 7 `133709` completed init/validation/16 rollouts, then old-log-prob entropy softmax OOMed at 0/5. Next action is a config-verified chunked-entropy retry with frozen scientific settings. |
+| F10 pilot launch | in_progress | Attempt 8 `134671` proved dense-padding ignores the resolved chunking flag and OOMed at 0/5. User approved switching to the native packed/remove-padding path; run a one-GPU integration smoke before any new dual-GPU attempt. |
 | Manual acceptance | pending | Five optimizer steps plus one resumed step complete; at least one step has non-zero reward variance/advantage/finite gradient; no NaN/OOM/schema error; KL/clip/grad and GPU telemetry are complete. |
 | Branch decision | pending | PASS freezes system settings for F10-F14; zero outcome advantage with healthy infrastructure routes to a separately reviewed F13 pilot. |
 
@@ -100,3 +100,4 @@ Build the first runnable baseline slice for CabinAgent-RL from `Project.md`: pro
 | G03 `132043` crashed in CAR automatic evaluation | Minimal-SFT fallback | Normalize `function.arguments` to objects before Qwen templating, add a round-trip parser test, and retrain the adapter before retrying G03. |
 | Remote combined validation stopped at inline YAML command quoting | F02 pre-flight attempt 1 | Tests, compileall, and `bash -n` had already passed; rerun Slurm test-only separately without the fragile inline Python expression. |
 | First formal submission command was intercepted by local PowerShell command substitution | F02 submit attempt 1 | No job was submitted; rerun `sbatch --parsable` without remote shell variable capture, then query the returned Job ID separately. |
+| F10 attempt 8 resolved chunking but still called dense unchunked entropy | F10 pilot attempt 8 | Dense FSDP path ignores the switch when `use_remove_padding=False`; user approved enabling the native packed/remove-padding path, gated by a one-GPU integration smoke. |
