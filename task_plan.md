@@ -53,7 +53,7 @@ Build the first runnable baseline slice for CabinAgent-RL from `Project.md`: pro
 | Frozen F01 parent | complete | Merge `133431` and validation `133447` passed; exact 10-file hash inventory, BF16 model/tokenizer load, and one-token generation are verified. |
 | Local trainer audit | complete | Implement fresh rank-32 RL LoRA over the merged F01 parent, same-node two-task launcher, telemetry, 5-step cap, checkpoint save, and resume path without altering scientific semantics. |
 | Local tests and remote pre-flight | complete | Relevant unit tests/compile/YAML pass; live QoS/GPU/storage rules and queue are rechecked; remote shell syntax and `sbatch --test-only` pass. |
-| F10 pilot launch | in_progress | Attempt 8 `134671` proved dense-padding ignores the resolved chunking flag and OOMed at 0/5. User approved switching to the native packed/remove-padding path; run a one-GPU integration smoke before any new dual-GPU attempt. |
+| F10 pilot launch | in_progress | Packed-path smoke `135977` passed; fresh 5-step same-node dual-GPU attempt 9 `135987` is queued with no successor. |
 | Manual acceptance | pending | Five optimizer steps plus one resumed step complete; at least one step has non-zero reward variance/advantage/finite gradient; no NaN/OOM/schema error; KL/clip/grad and GPU telemetry are complete. |
 | Branch decision | pending | PASS freezes system settings for F10-F14; zero outcome advantage with healthy infrastructure routes to a separately reviewed F13 pilot. |
 

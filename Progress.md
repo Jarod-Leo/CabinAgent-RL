@@ -570,3 +570,9 @@
 - Job `135977` 于 `gpu-pro6000-3` 运行 44 秒后 `COMPLETED`、exit `0:0`，machine-readable report 为 `PASS`。
 - Exact corrected-F01 parent/FA2、fresh rank32/alpha32 LoRA、veRL packed branch、chunked entropy/log-prob 与 backward 全部通过；LoRA gradient norm `2.50868`，峰值 allocated/reserved 约 `14.93/15.05 GiB`。
 - 四份原始产物已归档到 `reports/cluster/PACKED-ENTROPY-SMOKE-135977/`。Packed-path 前置门禁已闭合，允许在文档同步后创建新的双卡 5-step F10 run；无 successor。
+
+### Stage 18: F10 Packed-Path Attempt 9 Submitted
+
+- 新 run `f10_pilot_20260902_stage18_r8` 已提交为 Slurm job `135987`；manifest source/config digest 为 `9f5aa580...699b14c` / `7fd65bc8...819dc05`。
+- Job 请求同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB highmem，target 5 steps，当前 `PENDING (Priority)`；scheduler 暂估 2026-09-03 02:59:05 UTC 在 `gpu-pro6000-11` 启动。
+- `use_remove_padding=true` 为相对 attempt 8 的唯一执行路径修复；其余科学与吞吐设置冻结，无 successor。运行期间不得修改执行代码。

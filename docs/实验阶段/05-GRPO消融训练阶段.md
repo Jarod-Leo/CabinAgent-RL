@@ -542,6 +542,29 @@
 - 排队和运行期间冻结 checker、Slurm 脚本与训练 launcher。只有 `reports/packed_entropy_smoke_135977.json` 为 PASS 且 Slurm `COMPLETED` 后，才记录本 attempt 完成并提交新的双卡 5-step F10；否则先记录失败并修复，不跨过门禁。
 - 本 attempt 已闭合 packed-path 单卡门禁。完成本记录及 Project/Progress/tracker/总览同步后，允许以新 run/Job ID 提交 5-step F10；科学与既有吞吐参数保持冻结，仍无 automatic successor。
 
+### F10 Vanilla pilot start attempt 9 / Slurm 135987
+
+#### 实验设置
+
+- 新 run `experiments/f10_pilot_20260902_stage18_r8`；source/config SHA-256 为 `9f5aa580d47a4458b9338c043df09a31688d79fc86a3b1fa0540e181ee699b14c` / `7fd65bc8b3f7b99866ac500e8bf05d9dbf524068b4e41054c9c05d971819dc05`。
+- 复用 validated corrected-F01 parent，初始化 fresh rank/alpha `32/32` all-linear RL LoRA；outcome GRPO、4 tasks x4 rollouts、seed 42、LR `1e-6`、CAR train/dev、32K/20-turn、72B simulator、simulator/rollout caps `0.86/0.60`、max seqs 16、batched tokens 16384、workers 16、microbatch 1 与 offload 全部冻结。
+- 唯一相对 attempt 8 的执行路径变化为 `use_remove_padding=true`，actor/ref chunked entropy 保持 `true/2048`。同一物理节点 2x Pro 6000、2 tasks/单一 `srun`，target 5 steps、save/eval=5，无 successor。
+
+#### 执行结果
+
+- Packed smoke PASS 记录同步后，远端 Bash、真实 veRL config rendering 和 `sbatch --test-only` 再次通过；个人队列提交前为空。
+- Job `135987` 于 2026-09-02 12:21:29 UTC 提交，当前 `PENDING (Priority)`；请求 1 node、2 tasks、8 CPU、180 GiB、2x Pro 6000/highmem。当前调度估计为 2026-09-03 02:59:05 UTC、`gpu-pro6000-11`，仅为 scheduler estimate。
+- Manifest 状态为 `submitted`，明确记录 Job ID 与 source/config digest；训练尚未启动，当前为 `0/5` 且无 checkpoint。
+
+#### 改进原因
+
+- Attempt 8 的 dense branch 忽略 chunked entropy；单卡 job `135977` 已证明 native packed path 对 exact parent、FA2、fresh LoRA、entropy/log-prob/backward 数值健康，因此按已确认路线进入真实 5-step 集成验证。
+
+#### 改进措施
+
+- 排队/运行期间冻结所有执行代码与脚本。运行后采集 simulator/trainer telemetry、initial validation、逐 step reward variance/advantage、gradient/KL/clip、step time、checkpoint 与 resume 元数据。
+- 只有 5 steps、step-5 checkpoint 和至少一步非零 reward variance/advantage/finite nonzero gradient 全部成立且无 NaN/OOM/schema error，才进入人工验收；本作业不会自动提交 step-6 resume 或正式 F10-F14。
+
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、50-step checkpoints、逐 checkpoint CAR dev/BFCL 结果和失败样例。不得只保留最佳 checkpoint。

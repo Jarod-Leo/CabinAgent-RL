@@ -152,7 +152,7 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，packed-path smoke PASS，待新 5-step F10 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 packed-path attempt 9 排队 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
 统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；当前只授权 corrected-F01 初始化的 5-step F10 pilot，正式 F10-F14 仍等待 pilot 与恢复测试的人工验收。
@@ -224,5 +224,6 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - 集群登录节点 API preflight 已确认 veRL 0.9 当前实现的 packed 输出方法归属 `FSDPEngineWithLMHead`，checker 已据此修正；该检查发生在 Slurm 提交前，不计作实验 attempt。
 - Packed-path GPU smoke `135977` 已在远端 tests/dry-run/test-only 全通过后提交，当前 `PENDING (Priority)`；无自动 successor，JSON PASS 前不创建新的双卡 F10 run。
 - Packed-path GPU smoke `135977` 已在 `gpu-pro6000-3` 运行 44 秒并 `PASS`：exact parent/FA2、fresh rank32 LoRA、有限 chunked entropy/log-prob、有限非零 gradient 均成立，峰值 reserved 约 15.05 GiB。单卡门禁闭合，允许创建新的 5-step F10 run；正式 F10-F14 仍等待 pilot 与 resume 人工验收。
+- F10 packed-path attempt 9 已作为 run `f10_pilot_20260902_stage18_r8` / Job `135987` 提交，target 5 steps，当前 `PENDING (Priority)`；`use_remove_padding=true` 是相对 attempt 8 的唯一路径修复，其余设置冻结且无 successor。
 - Pilot 只允许调整不改变实验语义的系统吞吐参数；group size、每步 task 数、有效 batch、sampling、长度/轮数、reward/advantage、LoRA、优化器/LR、数据和 simulator 全部冻结。初始目标保留约 10%-15% 动态显存余量，根据 telemetry 在 pilot/resume 边界人工调整，正式分支使用统一冻结设置。
 - F10 pilot 与 step-6 resume 未实际通过前，不得宣称 fallback GRPO 闭环已跑通，也不得自动提交正式 F10-F14。若 F10 基础设施健康但 outcome advantage 全零，下一候选仅为独立 5-step F13 PRM-Lite pilot；只有 F13 仍无有效梯度时才讨论模型迁移，当前不展开。
