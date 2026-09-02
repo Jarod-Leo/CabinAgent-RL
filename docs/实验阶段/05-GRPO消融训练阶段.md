@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 有界 pilot attempt 7 已跑通模型、Ray、AgentLoop、初始验证和首批训练 rollout，但在 step 1 的 old-log-prob entropy softmax 发生 trainer CUDA OOM，仍未完成真实 optimizer step；正式 F10-F14 仍阻塞。
+进行中：F10 有界 pilot attempt 8 已确认 chunked-entropy 配置在 actor/ref 中解析为 `true/2048`，但当前 veRL dense-padding FSDP 分支未读取该开关，step 1 仍调用未分块 entropy 并 OOM；仍未完成真实 optimizer step，正式 F10-F14 继续阻塞。
 
 ## 目标
 
@@ -481,17 +481,22 @@
 
 - 已核对远端 veRL 0.9 的 `dp_actor.yaml`、`dp_ref.yaml` 与 FSDP engine 实现，确认上述两个 Hydra 路径分别传播到 actor/ref engine，并调用内置 chunked entropy 路径。
 - 本地配置渲染回归、36 项 unit tests 与 `compileall src scripts` 均通过；远端 Bash syntax、真实 veRL dry-run、36 tests 与 `sbatch --test-only` 也通过，双侧配置解析为 `true/2048`。
-- 新 run `experiments/f10_pilot_20260901_stage18_r7` 已提交为 job `134671`。Slurm 确认 1 node、2 tasks、8 CPU、2x `gpu:pro6000`，当前 `PENDING (Priority)`；optimizer steps 仍为 0，无 checkpoint 或 reward audit。
+- 新 run `experiments/f10_pilot_20260901_stage18_r7` 已提交为 job `134671`。Slurm 确认 1 node、2 tasks、8 CPU、2x `gpu:pro6000`。
+- Job 于 2026-09-01 16:08:59 UTC 在 `gpu-pro6000-11` 启动，运行 `00:10:21` 后 `FAILED`、exit `15:0`；trainer task exit 1，simulator task 按 cleanup 以 143 退出，manifest 标记 `failed`。
+- 双侧 resolved config 明确显示 actor/ref 与 actor FSDP engine 的 chunking 为 `True/2048`；初始 26-task validation reward mean@1 为 `0.230769`，turns min/max/mean 为 `5/44/15.8462`，随后完成首批 16 条训练 rollout。
+- Step 1 `_compute_old_log_prob` 最终仍从 dense-padding `prepare_model_outputs` 直接调用未分块 `verl_F.entropy_from_logits(logits)`，尝试分配 `20.80 GiB`，当时仅余 `18.15 GiB`，CUDA OOM。仍为 `0/5`，无 checkpoint、reward audit、advantage 或 gradient 指标。
+- 123/121 个 telemetry 样本显示 simulator/trainer 峰值分别为 `87,576/97,887 MiB`（89.47%）和 `90,565/97,887 MiB`（92.52%），两卡最大利用率均 100%。产物已归档到 `reports/cluster/F10-PILOT-134671/`。
 
 #### 改进原因
 
-- Attempt 7 的 OOM 位于未分块全词表 entropy softmax，额外申请 `20.44 GiB` 超过剩余 `18.86 GiB`；内置 chunked 路径直接针对这一瞬时中间张量，且无需缩小冻结的有效 batch 或序列长度。
+- Attempt 7 的 OOM 位于未分块全词表 entropy softmax，原计划用内置 chunked 路径避免该瞬时中间张量。
+- Attempt 8 证明配置路径本身无误，但当前 veRL 0.9 只有 `use_remove_padding=True` 的 packed 分支根据 `engine_config.entropy_from_logits_with_chunking` 调用分块实现；项目显式冻结为 `actor_rollout_ref.model.use_remove_padding=False` 后进入 dense 分支，该分支无条件调用未分块 entropy。失败属于 runtime/config-path 覆盖缺口，不是 chunk size、模型、数据、reward/advantage 或科学假设失败。
 
 #### 改进措施
 
-- Launcher 和 F10 submitter 显式固定双侧 chunking `true/2048`，测试同时断言 actor/ref 两侧，防止只修一侧或默认值回退。
-- 已同步精确改动到 canonical SSD tree，并完成远端 dry-run/Hydra 解析、tests、Bash syntax 与 `sbatch --test-only`。Job `134671` 无 successor；排队/运行期间冻结所有执行脚本与代码。
-- 作业启动后继续采集相同 simulator/trainer telemetry，重点核对 old-log-prob 是否越过 attempt 7 OOM 点、首个 optimizer step 的 reward variance/advantage/grad norm/KL/clip，以及 5-step checkpoint。任何失败都先完成本阶段四节记录再决定下一动作。
+- Attempt 8 保留且不产生 checkpoint 假象；当前不重复提交相同配置。
+- 下一候选修复有两条：推荐启用 veRL 已支持的 `use_remove_padding=True` packed 路径，使现有 chunking 真正生效并同时去除 padding；备选是在项目运行时为 dense 分支补齐 chunked 调用。前者改动更小且不修改安装环境，但必须先确认用户接受这一数学等价的表示/系统路径变化，并用单 GPU packed-path smoke 验证 exact parent、FA2、LoRA 和 finite log-prob/entropy 后才允许新的双 GPU attempt。
+- 模型、数据、4x4 effective batch、sampling、长度/轮数、reward/advantage、LoRA、optimizer/LR、simulator 和现有 memory caps 继续冻结；未获确认前不修改代码或提交下一作业。
 
 ## 结果记录要求
 

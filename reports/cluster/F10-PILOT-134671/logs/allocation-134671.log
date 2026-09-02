@@ -1,0 +1,45 @@
+job_id=134671
+phase=start
+node=gpu-pro6000-11
+job_nodelist=gpu-pro6000-11
+job_gpus=0,1
+max_training_steps=5
+simulator_gpu_memory_utilization=0.86
+rollout_gpu_memory_utilization=0.60
+rollout_max_num_batched_tokens=16384
+JobId=134671 JobName=car-f10-pilot
+   UserId=jiatian001(295800056) GroupId=jiatian001(295800056) MCS_label=N/A
+   Priority=2 Nice=0 Account=msc QOS=msc
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   DerivedExitCode=0:0
+   RunTime=00:00:00 TimeLimit=06:00:00 TimeMin=N/A
+   SubmitTime=2026-09-01T14:12:15 EligibleTime=2026-09-01T14:12:15
+   AccrueTime=2026-09-01T14:12:15
+   StartTime=2026-09-01T16:08:59 EndTime=2026-09-01T22:08:59 Deadline=N/A
+   PreemptEligibleTime=2026-09-01T16:08:59 PreemptTime=None
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-01T16:08:59 Scheduler=Backfill
+   Partition=cluster02 AllocNode:Sid=login-3:1446838
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=gpu-pro6000-11
+   BatchHost=gpu-pro6000-11
+   NumNodes=1 NumCPUs=8 NumTasks=2 CPUs/Task=4 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=8,mem=180G,node=1,billing=16,gres/gpu=2,gres/gpu:pro6000=2
+   AllocTRES=cpu=8,mem=180G,node=1,billing=16,gres/gpu=2,gres/gpu:pro6000=2
+   Socks/Node=* NtasksPerN:B:S:C=2:0:*:* CoreSpec=*
+   JOB_GRES=gpu:pro6000:2
+     Nodes=gpu-pro6000-11 CPU_IDs=0-7 Mem=184320 GRES=gpu:pro6000:2(IDX:0-1)
+   MinCPUsNode=8 MinMemoryNode=180G MinTmpDiskNode=0
+   Features=highmem DelayBoot=00:00:00
+   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
+   Command=/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/scripts/slurm_f10_pilot.sbatch
+   WorkDir=/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL
+   StdErr=/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/logs/slurm/car-f10-pilot-134671.err
+   StdIn=/dev/null
+   StdOut=/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/logs/slurm/car-f10-pilot-134671.out
+   Power=
+   TresPerNode=gres/gpu:pro6000:2
+   
+
+GPU 0: NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (UUID: GPU-3fd97205-0d96-4ced-8673-bbd5cc1fc2e4)
+GPU 1: NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (UUID: GPU-9ae34dbb-6e94-58a8-64f3-269c76077a04)

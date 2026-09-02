@@ -42,7 +42,7 @@
 | F10 | 7 | failed | validated corrected-F01 parent + fresh rank32 RL LoRA | 133674 | 0/5 | - | - | - | experiments/f10_pilot_20260901_stage18_r5 | gpu-pro6000-7; 4m21s; full init then Ray AgentLoop missing CAR_BENCH_DATASET_ROOT; no checkpoint |
 | AGENT-LOOP-ENV | 1 | complete | Ray OmegaConf environment propagation | 133700 | 0 | - | - | - | reports/agent_loop_env_smoke_133700.json | cpu-1; 32s; canonical CAR root exists and target/URL resolve PASS |
 | F10 | 8 | failed | validated corrected-F01 parent + fresh rank32 RL LoRA | 133709 | 0/5 | - | - | - | experiments/f10_pilot_20260901_stage18_r6 | gpu-pro6000-3; 7m07s; init/validation/16 rollouts passed; old-log-prob entropy softmax CUDA OOM; no checkpoint |
-| F10 | 9 | pending | validated corrected-F01 parent + fresh rank32 RL LoRA + chunked entropy | 134671 | 0/5 | - | - | - | experiments/f10_pilot_20260901_stage18_r7 | same-node 2x Pro6000 pending Priority; actor/ref chunking true, chunk size 2048; no successor |
+| F10 | 9 | failed | validated corrected-F01 parent + fresh rank32 RL LoRA + chunked entropy | 134671 | 0/5 | - | - | - | experiments/f10_pilot_20260901_stage18_r7 | gpu-pro6000-11; 10m21s; dense-padding FSDP path ignored resolved chunking and OOMed in old-log-prob entropy; no checkpoint |
 | F11 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | Turn-Discount |
 | F12 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | LATA |
 | F13 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | PRM-Lite |

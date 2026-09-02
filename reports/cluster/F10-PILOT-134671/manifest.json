@@ -1,0 +1,15 @@
+{
+  "config_sha256": "7fd65bc8b3f7b99866ac500e8bf05d9dbf524068b4e41054c9c05d971819dc05",
+  "config_source": "configs/train/fallback_ablations/vanilla.yaml",
+  "created_at": "2026-09-01T14:12:14.975807+00:00",
+  "host": "login-3.cluster02.eee.ntu.edu.sg",
+  "parent_config_sha256": "105eb693e75743783d4af1671b6dcee33c6583123b66fcacd296d9633c5ab8ba",
+  "parent_config_source": "configs/train/grpo_common.yaml",
+  "python": "3.11.16",
+  "run_id": "f10_pilot_20260901_stage18_r7",
+  "slurm_job_id": "134671",
+  "slurm_node_list": "gpu-pro6000-11",
+  "source_sha256": "0b540165fed14e3c8ea51f5383d40bb31b10f0709e7681fbe1651ecabae59249",
+  "status": "failed",
+  "updated_at": "2026-09-01T16:19:20.120796+00:00"
+}

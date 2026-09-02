@@ -25,7 +25,7 @@ The local baseline is intentionally dependency-light and does not require GPU ac
 
 - Direct-Instruct gate G02 completed 80 real trajectories but had zero mixed-outcome groups, so E10-E14 remain a documented negative result rather than being relabeled as successful.
 - Corrected Minimal-SFT F01 completed and was merged into an immutable Qwen2.5-7B parent. Targeted F02/G04 corrective training was retained as a negative ablation because it did not improve the frozen gate criteria overall.
-- The bounded F10 Vanilla-GRPO pilot now reaches model initialization, initial validation, and the first 16-rollout training batch. Its latest attempt stops before optimizer step 1 on an unchunked entropy-softmax memory spike; the next scoped change is mathematically equivalent chunked entropy computation.
+- The bounded F10 Vanilla-GRPO pilot now reaches model initialization, initial validation, and the first 16-rollout training batch. Attempt 8 confirmed that veRL 0.9's dense-padding FSDP path ignores the resolved chunked-entropy flag and still OOMs before optimizer step 1; the proposed next step is a single-GPU validation of veRL's native packed/remove-padding chunked path before another bounded retry.
 - No formal F10-F14 result or final CAR/BFCL score is claimed yet. See `Project.md`, `Progress.md`, and `docs/实验阶段/` for attempt-level evidence and current gates.
 
 ## Quick Start

@@ -538,3 +538,10 @@
 - 远端 Bash syntax、veRL dry-run、36 tests 与 `sbatch --test-only` 全部通过；真实渲染确认 actor/ref 两侧 chunked entropy 均为 `true`、chunk size 均为 `2048`。
 - 新 run `f10_pilot_20260901_stage18_r7` 已提交为 Slurm job `134671`：同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB node memory、target 5 steps、无 successor。
 - Job 当前因集群 Pro 6000 满载处于 `PENDING (Priority)`；用户队列中仅此作业。排队/运行期间冻结执行代码，启动后按既有 telemetry 与 optimizer 验收契约监测。
+
+### Stage 18: F10 Attempt 8 Exposed Dense-Path Chunking Gap
+
+- Job `134671` 在 `gpu-pro6000-11` 使用同节点 2x Pro 6000 运行 `10m21s` 后失败；双侧配置确实解析为 chunking `True/2048`，初始 validation 与首批 16 条 rollout 均完成。
+- 当前 veRL FSDP 的 packed/remove-padding 分支实现 chunked entropy，但项目冻结的 dense-padding 分支无条件调用未分块 entropy；step 1 因额外申请 `20.80 GiB`、仅余 `18.15 GiB` 再次 OOM，仍为 `0/5`，无 checkpoint/gradient/reward audit。
+- Simulator/trainer telemetry 峰值为 `87,576/97,887 MiB`（89.47%）与 `90,565/97,887 MiB`（92.52%）；完整日志已归档 `reports/cluster/F10-PILOT-134671/`，用户队列已清空。
+- 推荐下一步是启用 veRL 原生 `use_remove_padding=True` packed 路径，并先做单 GPU exact-parent/FA2/LoRA/log-prob/entropy smoke；该系统路径变化需用户确认后实施，科学设置和 memory caps 保持冻结。

@@ -152,7 +152,7 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 pilot 已到首批 rollout，trainer entropy OOM 待修 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 dense-padding entropy 路径待修 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
 统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；当前只授权 corrected-F01 初始化的 5-step F10 pilot，正式 F10-F14 仍等待 pilot 与恢复测试的人工验收。
@@ -218,6 +218,7 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - AgentLoop env smoke `133700` 已 PASS：Ray worker 中 canonical CAR root 存在，target/URL resolve 正确；允许 F10 attempt 7。
 - F10 attempt 7 `133709` 已跑通完整初始化、初始验证和首批训练 rollout，但在 step 1 old-log-prob 的未分块全词表 entropy softmax 尝试额外分配 20.44 GiB 时 OOM；trainer 峰值 96,055/97,887 MiB，仍为 0/5 steps、无 checkpoint。下一 attempt 仅评估/启用数学等价的 chunked entropy 显存路径，科学设置与现有 caps 保持冻结。
 - 已按 veRL 0.9 的真实 FSDP actor/ref 配置路径完成 chunked-entropy 修复准备：两侧均启用 `entropy_from_logits_with_chunking=true`、chunk size `2048`；本地 36 tests 与 compileall 通过。该变更只分块计算 softmax/entropy，不改变训练样本、有效 batch、reward、advantage 或优化器语义；远端解析验证通过后方可提交新 5-step attempt。
-- F10 attempt 8 job `134671` 已通过远端 veRL 配置解析、36 tests、Bash syntax 与 Slurm test-only 后提交；run 为 `f10_pilot_20260901_stage18_r7`，当前 `PENDING (Priority)`。资源仍为同节点 2x Pro 6000，target 5 steps，无 successor；排队/运行期间冻结执行代码。
+- F10 attempt 8 job `134671` 在通过远端 veRL 配置解析、36 tests、Bash syntax 与 Slurm test-only 后提交；run 为 `f10_pilot_20260901_stage18_r7`，初始状态为 `PENDING (Priority)`。资源仍为同节点 2x Pro 6000，target 5 steps，无 successor；排队/运行期间执行代码保持冻结。
+- F10 attempt 8 `134671` 最终在 `gpu-pro6000-11` 运行 10m21s 后仍于 step 1 old-log-prob OOM，0/5 steps。根因已缩小为 veRL 0.9 dense-padding FSDP 分支忽略已解析的 chunking `True/2048`，仍调用未分块 entropy；推荐经确认后切换到原生支持 chunking 的 `use_remove_padding=True` packed 路径，并先做单 GPU集成 smoke。正式 F10-F14 与 step-6 resume 继续阻塞。
 - Pilot 只允许调整不改变实验语义的系统吞吐参数；group size、每步 task 数、有效 batch、sampling、长度/轮数、reward/advantage、LoRA、优化器/LR、数据和 simulator 全部冻结。初始目标保留约 10%-15% 动态显存余量，根据 telemetry 在 pilot/resume 边界人工调整，正式分支使用统一冻结设置。
 - F10 pilot 与 step-6 resume 未实际通过前，不得宣称 fallback GRPO 闭环已跑通，也不得自动提交正式 F10-F14。若 F10 基础设施健康但 outcome advantage 全零，下一候选仅为独立 5-step F13 PRM-Lite pilot；只有 F13 仍无有效梯度时才讨论模型迁移，当前不展开。
