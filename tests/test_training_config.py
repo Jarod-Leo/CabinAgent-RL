@@ -100,6 +100,8 @@ class TrainingConfigTests(unittest.TestCase):
                 "ROLLOUT_MAX_NUM_BATCHED_TOKENS": "16384",
                 "ENTROPY_FROM_LOGITS_WITH_CHUNKING": "true",
                 "ENTROPY_FROM_LOGITS_CHUNK_SIZE": "2048",
+                "MAX_ACTOR_CKPT_TO_KEEP": "1",
+                "MAX_CRITIC_CKPT_TO_KEEP": "1",
             },
             clear=False,
         ):
@@ -113,6 +115,8 @@ class TrainingConfigTests(unittest.TestCase):
         self.assertIn("actor_rollout_ref.model.use_remove_padding=true", rendered)
         self.assertIn("actor_rollout_ref.rollout.gpu_memory_utilization=0.60", rendered)
         self.assertIn("actor_rollout_ref.rollout.max_num_batched_tokens=16384", rendered)
+        self.assertIn("trainer.max_actor_ckpt_to_keep=1", rendered)
+        self.assertIn("trainer.max_critic_ckpt_to_keep=1", rendered)
         for role in ("actor", "ref"):
             self.assertIn(
                 f"actor_rollout_ref.{role}.entropy_from_logits_with_chunking=true",
@@ -127,6 +131,11 @@ class TrainingConfigTests(unittest.TestCase):
         self.assertIn("USE_REMOVE_PADDING:-true", submitter)
         self.assertIn("ENTROPY_FROM_LOGITS_WITH_CHUNKING:-true", submitter)
         self.assertIn("ENTROPY_FROM_LOGITS_CHUNK_SIZE:-2048", submitter)
+        self.assertIn("MAX_ACTOR_CKPT_TO_KEEP:-1", submitter)
+        self.assertIn("MAX_CRITIC_CKPT_TO_KEEP:-1", submitter)
+        self.assertIn("save_freq=5", submitter)
+        self.assertIn("save_freq=-1", submitter)
+        self.assertIn("SAVE_FREQ=$save_freq", submitter)
 
         packed_smoke = (ROOT / "scripts/check_packed_entropy.py").read_text(
             encoding="utf-8"

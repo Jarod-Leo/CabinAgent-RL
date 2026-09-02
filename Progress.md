@@ -576,3 +576,16 @@
 - 新 run `f10_pilot_20260902_stage18_r8` 已提交为 Slurm job `135987`；manifest source/config digest 为 `9f5aa580...699b14c` / `7fd65bc8...819dc05`。
 - Job 请求同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB highmem，target 5 steps，当前 `PENDING (Priority)`；scheduler 暂估 2026-09-03 02:59:05 UTC 在 `gpu-pro6000-11` 启动。
 - `use_remove_padding=true` 为相对 attempt 8 的唯一执行路径修复；其余科学与吞吐设置冻结，无 successor。运行期间不得修改执行代码。
+
+### Stage 18: F10 Packed-Path Five-Step Pilot Passed
+
+- Job `135987` 在 `gpu-pro6000-11` 使用同节点 2x Pro 6000 于 2026-09-02 12:57:57--13:26:40 UTC 完成，Slurm `COMPLETED`、exit `0:0`、运行 `28m43s`；5/5 optimizer steps、final validation 和 `global_step_5` checkpoint 均已落盘。
+- Step 1/2/3/5 的 reward 范围均为 `[0,1]`，advantage 同时含正负值，grad norm 分别为 `0.071629/0.025236/0.017444/0.035955`；无 NaN、OOM 或 reward-schema 错误，五步 pilot 核心门禁 PASS。Step 4 outcome advantage 全零但仅该组同分，不影响其他四步的有效信号。
+- Simulator/trainer 显存峰值为 `87,576/97,887 MiB`（89.47%）和 `94,529/97,887 MiB`（96.57%），两卡最大利用率均 100%；trainer 已接近安全上限，不再提高显存占用参数。Initial/final CAR dev mean@1 为 `0.230769/0.269231`，不作五步性能提升声明。
+- 完成进度 100% 后出现 Ray DataLoader worker shutdown traceback，但 Slurm exit 0，且 step-5 metrics/checkpoint/final validation 已保存，因此定性为成功伴随非致命 shutdown warning。精选日志、telemetry、manifest 与小型 checkpoint 元数据已归档到 `reports/cluster/F10-PILOT-135987/`；公开仓库副本已将一处 CAR 样例中的 50 字符 RapidAPI 参数值替换为 `[REDACTED]`，远端原始日志不改动。
+
+### Stage 18: SSD Cleanup And Step-6 Resume Retention Prepared
+
+- 经用户确认，精确删除远端 `cache/pip` 和 5 个已作废或被正式结果替代的 SFT 目录，以及旧传输包和 Job `135987` 临时目录；删除前已将 114 项 manifest/config/metrics/小日志归档并校验到 `reports/cluster/SSD-CLEANUP-20260903/`。corrected F01、F02 正式负结果、模型、数据和当前 step-5 checkpoint 均保留。
+- SSD 占用从约 `124.5` 降至 `117.1 GiB`，释放约 `7.4 GiB`；全项目当前只有 `f10_pilot_20260902_stage18_r8/checkpoints/global_step_5` 一个 GRPO checkpoint。
+- Launcher 新增 actor/critic checkpoint retention=`1`；F10 start/resume 分别使用 save frequency `5/-1`。Step-6 resume 将保留已验收 step-5 恢复点但不新建第二份约 30 GiB checkpoint。相关 training-config tests 与 Python compilation 已通过，下一步是远端回归、Slurm test-only 和独立 resume 提交。

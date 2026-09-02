@@ -138,6 +138,10 @@ def build_overrides(
         f"trainer.total_training_steps={max_steps}",
         f"trainer.save_freq={save_freq}",
         f"trainer.test_freq={eval_freq}",
+        "trainer.max_actor_ckpt_to_keep="
+        + env_value("MAX_ACTOR_CKPT_TO_KEEP", 1),
+        "trainer.max_critic_ckpt_to_keep="
+        + env_value("MAX_CRITIC_CKPT_TO_KEEP", 1),
         "trainer.project_name=CabinAgent-RL",
         f"trainer.experiment_name={run_id}",
         f"trainer.default_local_dir={run_dir.as_posix()}/checkpoints",

@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 有界 pilot attempt 8 已确认 chunked-entropy 配置在 actor/ref 中解析为 `true/2048`，但当前 veRL dense-padding FSDP 分支未读取该开关，step 1 仍调用未分块 entropy 并 OOM；仍未完成真实 optimizer step，正式 F10-F14 继续阻塞。
+进行中：F10 packed-path attempt 9 已完成 5/5 optimizer steps，step 1/2/3/5 均产生 mixed reward、非零 advantage 与有限非零 gradient，step-5 checkpoint 已保存，五步门禁 PASS；当前准备从同一 checkpoint 独立恢复到 step 6，正式 F10-F14 仍等待 resume 验收。
 
 ## 目标
 
@@ -32,7 +32,7 @@
 | Policy LoRA | rank/alpha `32/32` |
 | Simulator | 固定 72B-AWQ vLLM，不训练 |
 | 训练长度 | 最多 250 steps |
-| Checkpoint/eval | 50、100、150、200、250 |
+| Checkpoint/eval | 50、100、150、200、250 评测；SSD 仅保留最新 1 个完整可恢复 checkpoint |
 | Turn discount alpha | `1.05` |
 | PRM-Lite range | clip 到 `[-0.5, 0.5]` |
 | Process weight | `0.3` |
@@ -44,7 +44,7 @@
 
 - E10-E14：未启动；阻塞原因是 G02 mixed outcome group ratio `0.0`。
 - F10-F14 正式 run：未启动。F02/G04 已作为负结果结束；只授权 F10 pilot，formal family 等待人工验收。
-- 当前没有训练 checkpoint，也没有可比较的 CAR dev/BFCL 训练结果。
+- F10 pilot 已产生 `global_step_5` 可恢复 checkpoint；初始/最终 CAR dev mean@1 为 `0.230769/0.269231`，仅作五步集成诊断，不解释为性能提升。
 
 ## 已完成改进
 
@@ -555,16 +555,45 @@
 - Packed smoke PASS 记录同步后，远端 Bash、真实 veRL config rendering 和 `sbatch --test-only` 再次通过；个人队列提交前为空。
 - Job `135987` 于 2026-09-02 12:21:29 UTC 提交，当前 `PENDING (Priority)`；请求 1 node、2 tasks、8 CPU、180 GiB、2x Pro 6000/highmem。当前调度估计为 2026-09-03 02:59:05 UTC、`gpu-pro6000-11`，仅为 scheduler estimate。
 - Manifest 状态为 `submitted`，明确记录 Job ID 与 source/config digest；训练尚未启动，当前为 `0/5` 且无 checkpoint。
+- Job 实际于 2026-09-02 12:57:57 UTC 在 `gpu-pro6000-11` 启动，13:26:40 UTC 以 `COMPLETED`、exit `0:0` 结束，总时长 `28m43s`；同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB 配置与申请一致。
+- 训练完成 `5/5` optimizer steps。逐步核心指标为：step 1/2/3/5 reward mean 均 `0.0625`、范围 `[0,1]`，advantage 范围均含正负值且 grad norm 分别为 `0.071629/0.025236/0.017444/0.035955`；step 4 reward mean `0.25` 但组内 advantage 全零，grad norm `1.723e-05` 为 KL-only。五步均无 NaN/OOM/reward-schema error，clip fraction 为 `0`，KL 项有限。
+- Step time 为 `188.06/228.82/184.95/136.75/320.07s`；step 5 包含约 `46.33s` checkpoint 和 `100.68s` final validation。Initial/final CAR dev mean@1 为 `0.230769/0.269231`，五步不足以作性能改进结论。
+- Step-5 checkpoint 完整保存到 `experiments/f10_pilot_20260902_stage18_r8/checkpoints/global_step_5`，约 `30 GiB`，`latest_checkpointed_iteration.txt=5`；manifest 已为 completed。训练进度达到 100% 后 Ray DataLoader worker 在 shutdown 阶段被终止并打印 traceback，但它发生在 step-5 指标、checkpoint 和 final validation 落盘之后，Slurm 聚合退出码仍为 0，因此记录为成功伴随 shutdown warning。
+- Simulator/trainer telemetry 分别采集 341/339 个样本，显存峰值为 `87,576/97,887 MiB`（89.47%）和 `94,529/97,887 MiB`（96.57%），两卡利用率最大均为 100%；trainer 已接近安全上限，不再提高显存占用参数。精选结果已校验归档到 `reports/cluster/F10-PILOT-135987/`；公开仓库日志副本将一处 CAR 样例中的 RapidAPI 参数值替换为 `[REDACTED]`，集群原始日志保持不变。
 
 #### 改进原因
 
 - Attempt 8 的 dense branch 忽略 chunked entropy；单卡 job `135977` 已证明 native packed path 对 exact parent、FA2、fresh LoRA、entropy/log-prob/backward 数值健康，因此按已确认路线进入真实 5-step 集成验证。
+- Attempt 9 证明 packed path 修复了此前的 optimizer 前 OOM，并满足“至少一步 mixed reward + 非零 advantage + 有限非零 gradient”的核心门禁。step 4 的全零 outcome advantage 是采样组同分现象，不否定其他四步的有效学习信号。
 
 #### 改进措施
 
 - 排队/运行期间冻结所有执行代码与脚本。运行后采集 simulator/trainer telemetry、initial validation、逐 step reward variance/advantage、gradient/KL/clip、step time、checkpoint 与 resume 元数据。
 - 只有 5 steps、step-5 checkpoint 和至少一步非零 reward variance/advantage/finite nonzero gradient 全部成立且无 NaN/OOM/schema error，才进入人工验收；本作业不会自动提交 step-6 resume 或正式 F10-F14。
+- 上述五步标准已满足，允许按既定边界从同一 run 单独提交 step-6 resume；resume 仍无 successor，完成并记录前不启动正式 F10-F14。
+
+### F10 step-6 resume preparation / local
+
+#### 实验设置
+
+- 恢复对象固定为 `f10_pilot_20260902_stage18_r8/global_step_5`，目标仅从 step 5 恢复并完成 step 6；模型、数据、seed、4x4 rollout、sampling、reward/advantage、LoRA、optimizer/LR、长度、simulator、packed/chunked 路径、offload、memory caps 与同节点双 GPU 拓扑全部冻结。
+- SSD checkpoint 策略按用户确认改为每个 run 最新 `1` 个完整可恢复 checkpoint；launcher 显式设置 actor/critic retention 为 `1`。本次单步恢复使用 `SAVE_FREQ=-1`，保留已验收的 step-5 checkpoint，避免临时再生成约 30 GiB 的 step-6 checkpoint。
+
+#### 执行结果
+
+- 本地 training-config 回归与 Python compilation 通过；尚未提交 step-6 Slurm 作业，因此本小节当前无 Job ID 或训练指标。
+- 提交前 SSD 已完成精确清理：删除 pip cache 和 5 个已作废/被正式结果替代的 SFT smoke/full 目录，保留 corrected F01、F02 正式负结果、模型、数据及 step-5 checkpoint；占用由约 `124.5` 降至 `117.1 GiB`。被删 SFT 的 114 项配置/manifest/metrics/小日志已先做 SHA-256 校验归档到 `reports/cluster/SSD-CLEANUP-20260903/`。
+
+#### 改进原因
+
+- 当前 checkpoint 约 30 GiB，SSD 总额 150 GiB；若 step-6 按旧 `save_freq=5` 的 last-step 行为再次保存，可能在清理旧 checkpoint 前短暂占用第二份约 30 GiB，超出安全余量。
+- Step-6 的验收目标是证明 checkpoint 可恢复并继续产生第 6 个 optimizer step，不要求创建新的 checkpoint；保留已验证的 step-5 恢复点即可满足失败恢复需要。
+
+#### 改进措施
+
+- 提交器按 start/resume 分支分别使用 `save_freq=5/-1`，并新增 `MAX_ACTOR_CKPT_TO_KEEP=1`、`MAX_CRITIC_CKPT_TO_KEEP=1` 的显式导出与配置渲染回归。
+- 同步集群后必须执行 Bash syntax、unit tests、veRL dry-run 和 `sbatch --test-only`；全部通过才提交 resume。作业完成后验证从 step 5 加载、step 6 指标落盘、原 step-5 checkpoint 仍存在且全项目没有新增第二个 GRPO checkpoint。
 
 ## 结果记录要求
 
-每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、50-step checkpoints、逐 checkpoint CAR dev/BFCL 结果和失败样例。不得只保留最佳 checkpoint。
+每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、每个评测点的 CAR dev/BFCL 结果和失败样例；完整可恢复 checkpoint 在 SSD 仅保留最新 1 个，失败/被轮换 checkpoint 的小型元数据与结论继续归档，不删除 attempt 历史。
