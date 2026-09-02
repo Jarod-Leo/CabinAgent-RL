@@ -518,6 +518,26 @@
 
 - Smoke 输出 machine-readable JSON，并要求 exact parent 以 FA2 加载、packed 分支源码契约存在、entropy/log-prob/loss 有限、LoRA gradient 有限且非零；仅 PASS 后允许创建新的 5-step F10 run/Job ID。
 
+### F10 packed-path preflight / Slurm 135977
+
+#### 实验设置
+
+- Git commit `ba12b7ad9135b11d9579fed37a10951cea4ce765`；单节点 1 task、1x Pro 6000、30 分钟，CUDA 13.0 与既有项目 Conda 环境。模型为 exact corrected-F01 merged parent，临时挂载 fresh rank/alpha `32/32` all-linear LoRA。
+- Checker 使用两条不等长输入形成 packed valid-token logits，调用 veRL `entropy_from_logits_with_chunking(..., chunk_size=2048)`，计算 token log-prob/NLL backward，并核对 FA2、packed 分支源码契约、有限数值与有限非零 LoRA gradient。
+
+#### 执行结果
+
+- 本地与远端 36 项 tests、`compileall`、Bash syntax、真实 veRL dry-run 和 `sbatch --test-only` 全部通过；远端渲染明确为 remove-padding `true` 且 actor/ref chunking `true/2048`。
+- Job `135977` 于 2026-09-02 12:13:01 UTC 提交，当前 `PENDING (Priority)`；请求 1 node、1 GPU、4 CPU、33 GiB node memory，无依赖且无 successor。集群 test-only 当时预测资源约在 2026-09-03 20:20 可用。
+
+#### 改进原因
+
+- 该 smoke 是 attempt 8 dense-path OOM 后的强制单卡门禁，避免在 packed/LoRA/entropy 组合未经验证时直接消耗双卡作业。
+
+#### 改进措施
+
+- 排队和运行期间冻结 checker、Slurm 脚本与训练 launcher。只有 `reports/packed_entropy_smoke_135977.json` 为 PASS 且 Slurm `COMPLETED` 后，才记录本 attempt 完成并提交新的双卡 5-step F10；否则先记录失败并修复，不跨过门禁。
+
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、50-step checkpoints、逐 checkpoint CAR dev/BFCL 结果和失败样例。不得只保留最佳 checkpoint。

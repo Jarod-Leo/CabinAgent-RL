@@ -43,6 +43,7 @@
 | AGENT-LOOP-ENV | 1 | complete | Ray OmegaConf environment propagation | 133700 | 0 | - | - | - | reports/agent_loop_env_smoke_133700.json | cpu-1; 32s; canonical CAR root exists and target/URL resolve PASS |
 | F10 | 8 | failed | validated corrected-F01 parent + fresh rank32 RL LoRA | 133709 | 0/5 | - | - | - | experiments/f10_pilot_20260901_stage18_r6 | gpu-pro6000-3; 7m07s; init/validation/16 rollouts passed; old-log-prob entropy softmax CUDA OOM; no checkpoint |
 | F10 | 9 | failed | validated corrected-F01 parent + fresh rank32 RL LoRA + chunked entropy | 134671 | 0/5 | - | - | - | experiments/f10_pilot_20260901_stage18_r7 | gpu-pro6000-11; 10m21s; dense-padding FSDP path ignored resolved chunking and OOMed in old-log-prob entropy; no checkpoint |
+| PACKED-ENTROPY-SMOKE | 1 | queued | exact corrected-F01 parent + FA2 + fresh rank32 LoRA + packed chunked entropy | 135977 | 0 | - | - | - | reports/packed_entropy_smoke_135977.json | PENDING (Priority); 1x Pro 6000; 30m; no successor; PASS gates next F10 |
 | F11 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | Turn-Discount |
 | F12 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | LATA |
 | F13 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | PRM-Lite |

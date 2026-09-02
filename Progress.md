@@ -558,3 +558,9 @@
 - 新增单卡 `slurm_packed_entropy_smoke.sbatch` 与机器可读 checker，覆盖 exact corrected-F01 parent、FlashAttention2、fresh rank-32/alpha-32 LoRA、packed valid-token entropy/log-prob、有限非零 LoRA gradient，并检查 veRL FSDP packed 分支源码契约。
 - 本地 training-config tests 与 Python compile 已通过。下一步是在集群重新核对实时规则、同步代码并运行该 smoke；JSON PASS 前不提交新的双卡 F10。
 - 2026-09-02 远端 API preflight 确认 chunk helper 签名为 `(logits, chunk_size=2048)`，真实 `prepare_model_outputs` 所属类为 `FSDPEngineWithLMHead`；在占用 GPU 前修正 checker 反射目标并增加静态回归，未产生无效 Slurm attempt。
+
+### Stage 18: Packed-Path GPU Smoke Submitted
+
+- 代码-only bundle SHA-256 `179d8b6c6ee2e4005ef9041ea33475102abc55788a1723317946b4570afd90c3` 已同步至集群；远端 Bash、36 tests、compileall、veRL dry-run 与 Slurm test-only 全部通过。
+- 单卡 packed-path smoke job `135977` 已提交，当前 `PENDING (Priority)`；资源为 1x Pro 6000、4 CPU、33 GiB、30 分钟，无依赖与 successor。
+- 队列等待期间冻结执行代码；machine-readable JSON PASS 前不提交双卡 F10。
