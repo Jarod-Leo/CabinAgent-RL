@@ -149,6 +149,18 @@ class TrainingConfigTests(unittest.TestCase):
         self.assertIn("SIMULATOR_GPU_MEMORY_UTILIZATION:-0.86", formal_submitter)
         self.assertIn("ROLLOUT_GPU_MEMORY_UTILIZATION:-0.60", formal_submitter)
         self.assertIn("scripts/slurm_f10_pilot.sbatch", formal_submitter)
+        self.assertIn('PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"', formal_submitter)
+        self.assertIn('"$PYTHON_BIN" -B scripts/init_experiment.py', formal_submitter)
+        self.assertIn('"$PYTHON_BIN" -B scripts/update_experiment_manifest.py', formal_submitter)
+
+        f10_slurm = (ROOT / "scripts/slurm_f10_pilot.sbatch").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"', f10_slurm)
+        self.assertEqual(
+            f10_slurm.count('"$PYTHON_BIN" -B scripts/update_experiment_manifest.py'),
+            2,
+        )
 
         packed_smoke = (ROOT / "scripts/check_packed_entropy.py").read_text(
             encoding="utf-8"

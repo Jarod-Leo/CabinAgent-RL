@@ -682,6 +682,29 @@
 - Step-50 PASS 要求完成 50/50、无 NaN/OOM/schema error、产生可恢复 `global_step_50` 且仍最多 1 个完整 checkpoint；单步同分允许存在，但需报告 50 steps 中有效 outcome-gradient 的频率与分布。完成并记录前不提交 step-100 resume 或 F11-F14。
 - 上述 PASS 标准均已满足。保持 Git `9096f74` 对应执行路径、全部科学设置、caps `0.86/0.60` 和 retention `1/1` 不变；完成本 attempt 的四处记录、公开安全归档和 GitHub 推送后，允许从 `global_step_50` 人工提交 target=100 的独立 resume segment。
 
+### Formal F10 step-100 submission attempt 1 / Slurm 137581
+
+#### 实验设置
+
+- 计划从 `f10_formal_20260903_stage19/global_step_50` 恢复到 total step 100；save/eval frequency `50/50`、retention `1/1`、全部科学/系统参数和同节点双卡拓扑继承 step-50 PASS 配置。
+- 提交前 checkpoint 精确核对为 11 文件、`31,443,788,637` bytes，且为全项目唯一完整 GRPO checkpoint；Slurm `--test-only` 对相同 target=100 override 通过。
+
+#### 执行结果
+
+- `sbatch` 返回 Job `137581`，但提交器随后在登录 shell 执行 manifest update 时因 `python: command not found` 返回非零；原因是新 SSH 会话未激活 Conda，提交器隐式依赖 PATH 中存在 `python`。
+- Job 尚处于 pending、未分配节点且 elapsed `00:00:00` 时已精确取消；Slurm 最终 `CANCELLED`，无 GPU、无 rollout、无 optimizer step，manifest 和 `submissions.tsv` 均未被错误更新，step-50 checkpoint 未修改。
+
+#### 改进原因
+
+- Submitter 在 `sbatch` 之后才调用裸 `python`，形成“作业已入队但生命周期元数据未更新”的非原子失败窗口；batch 脚本在启动 two-task `srun` 前也调用裸 `python`，因此不能仅在当前 shell 临时激活 Conda后重提。
+- 该问题是提交封装/运行时路径缺陷，不是 checkpoint、资源、训练配置或科学假设失败。
+
+#### 改进措施
+
+- Formal submitter 与 F10 batch 脚本均显式解析并验证 `$GPU_ENV/bin/python`，所有 manifest/init 调用使用该绝对解释器，不再依赖交互 shell activation。
+- 增加静态回归，要求 submitter 的 init/update 和 batch 的 running/final update 均使用 `PYTHON_BIN`。本地测试、远端 Bash syntax、无 Conda shell 下的解释器检查与 Slurm test-only 全部通过后，才以新 Job ID 重提 step 100。
+- 存储峰值方面，veRL retention=1 已核实为新 checkpoint 成功保存后才删除旧 checkpoint；保留 CUDA/Triton/vLLM 编译缓存以避免减速，仅删除已确认无用且可再生的 69 MiB pip 下载缓存。模型、数据、F01/F02 结果、失败证据与 step-50 checkpoint 均保留。
+
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、每个评测点的 CAR dev/BFCL 结果和失败样例；完整可恢复 checkpoint 在 SSD 仅保留最新 1 个，失败/被轮换 checkpoint 的小型元数据与结论继续归档，不删除 attempt 历史。

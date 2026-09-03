@@ -15,8 +15,13 @@ set -euo pipefail
 
 PROJECT_ROOT="${PROJECT_ROOT:-/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL}"
 GPU_ENV="${GPU_ENV:-$PROJECT_ROOT/envs/cabinagentrl}"
+PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"
 : "${RUN_ID:?RUN_ID must be exported}"
 : "${EXPERIMENT_CONFIG:?EXPERIMENT_CONFIG must be exported}"
+[[ -x "$PYTHON_BIN" ]] || {
+  echo "Project Python is missing or not executable: $PYTHON_BIN" >&2
+  exit 1
+}
 cd "$PROJECT_ROOT"
 mapfile -t nodes < <(scontrol show hostnames "$SLURM_JOB_NODELIST")
 [[ "${#nodes[@]}" -eq 1 ]] || { echo "Expected one physical node" >&2; exit 2; }
@@ -38,7 +43,7 @@ mkdir -p "$log_dir" "$PROJECT_ROOT/logs/slurm"
   nvidia-smi -L
 } >"$log_dir/allocation-${SLURM_JOB_ID}.log" 2>&1
 
-python -B scripts/update_experiment_manifest.py \
+"$PYTHON_BIN" -B scripts/update_experiment_manifest.py \
   --run-id "$RUN_ID" --status running \
   --slurm-job-id "$SLURM_JOB_ID" --node-list "$SLURM_JOB_NODELIST"
 
@@ -57,7 +62,7 @@ if [[ "$run_status" -eq 0 ]]; then
 else
   final_status=failed
 fi
-python -B scripts/update_experiment_manifest.py \
+"$PYTHON_BIN" -B scripts/update_experiment_manifest.py \
   --run-id "$RUN_ID" --status "$final_status" \
   --slurm-job-id "$SLURM_JOB_ID" --node-list "$SLURM_JOB_NODELIST"
 exit "$run_status"

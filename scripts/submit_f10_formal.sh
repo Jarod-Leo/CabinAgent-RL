@@ -10,10 +10,16 @@ phase="$1"
 requested_run_id="${2:-}"
 target_steps="${3:-50}"
 PROJECT_ROOT="${PROJECT_ROOT:-/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL}"
+GPU_ENV="${GPU_ENV:-$PROJECT_ROOT/envs/cabinagentrl}"
+PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"
 config="configs/train/fallback_ablations/vanilla.yaml"
 parent_model="$PROJECT_ROOT/models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901"
 cd "$PROJECT_ROOT"
 
+[[ -x "$PYTHON_BIN" ]] || {
+  echo "Project Python is missing or not executable: $PYTHON_BIN" >&2
+  exit 1
+}
 [[ -f "$parent_model/parent_manifest.json" ]] || {
   echo "Verified merged F01 parent is missing: $parent_model" >&2
   exit 1
@@ -35,7 +41,7 @@ case "$phase" in
     }
     [[ -z "$requested_run_id" ]] || run_id="$requested_run_id"
     run_id="${run_id:-f10_formal_$(date -u +%Y%m%dT%H%M%SZ)}"
-    python -B scripts/init_experiment.py --config "$config" --run-id "$run_id"
+    "$PYTHON_BIN" -B scripts/init_experiment.py --config "$config" --run-id "$run_id"
     ;;
   resume)
     [[ -n "$requested_run_id" ]] || {
@@ -69,7 +75,7 @@ job_id="$(sbatch --parsable \
   --export="$exports" \
   scripts/slurm_f10_pilot.sbatch)"
 [[ -n "$job_id" ]] || { echo "Empty job ID while submitting formal F10" >&2; exit 1; }
-python -B scripts/update_experiment_manifest.py \
+"$PYTHON_BIN" -B scripts/update_experiment_manifest.py \
   --run-id "$run_id" --status submitted --slurm-job-id "$job_id"
 printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "formal-$phase" "$job_id" "$target_steps" \
   >>"experiments/$run_id/submissions.tsv"

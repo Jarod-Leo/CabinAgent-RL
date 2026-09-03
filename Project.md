@@ -233,3 +233,4 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - F10 pilot 与 step-6 resume 已通过，fallback GRPO 的训练/保存/恢复基础设施闭环成立；正式 F10 已解锁，但 F11-F14 不自动串联。若正式 F10 持续缺少有效 outcome advantage，再按既定分支讨论独立 F13 PRM-Lite 诊断；只有 F13 仍无有效梯度时才讨论模型迁移。
 - 正式 F10 保持 250-step 总目标与 `50/100/150/200/250` 保存/评测点，但按这些边界拆为独立可恢复 Slurm segment；每段验收后才提交下一段。该调度方式连续恢复 model/optimizer/extra，不改变科学设置，并配合 SSD 仅保留最新 1 个完整 checkpoint。
 - 正式 F10 run `f10_formal_20260903_stage19` 的首个 segment Job `136868` 已 `COMPLETED/0:0`：50/50 steps，`21/50` 步具有有效 outcome-gradient，唯一 `global_step_50` checkpoint 已保存；initial/final CAR dev mean@1 均为 `0.269231`，尚不支持性能提升声明。当前证据支持按冻结路线恢复到 step 100，而不是提前切换 F13 或模型。
+- Step-100 首次提交 Job `137581` 在节点分配前取消：新 SSH shell 无裸 `python`，导致 `sbatch` 后的 manifest update 失败；0 GPU、0 step，checkpoint 未变。Formal submitter 与 batch lifecycle update 改为显式 `$GPU_ENV/bin/python`，回归通过后用新 Job ID 重提，科学路线不变。

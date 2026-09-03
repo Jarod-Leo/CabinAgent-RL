@@ -625,3 +625,10 @@
 - 平均/中位 step time 为 `172.06/170.60s`，平均吞吐 `1231.53 token/s`。Simulator/trainer 峰值显存为 `87,576/97,887 MiB`（89.47%）和 `94,529/97,887 MiB`（96.57%），不再提高显存占用参数。
 - 唯一完整 checkpoint 含 11 文件、`31,443,788,637` bytes；SSD 当前 `117.3/150 GB`。100% 进度后的 DataLoader worker traceback 与此前一致，因 checkpoint/final metrics/manifest/Slurm 均成功，记为非致命 shutdown warning。
 - Step-50 segment PASS；公开安全摘要已归档到 `reports/cluster/F10-FORMAL-136868/`。下一动作是在记录与 GitHub 推送后，从同一 checkpoint 独立恢复到 step 100；F11-F14 仍不启动。
+
+### Stage 19: Step-100 Submission Attempt 1 Cancelled Before Allocation
+
+- Target=100 的 Slurm test-only 已通过，但正式提交器在 `sbatch` 返回 Job `137581` 后因新 SSH shell 无裸 `python` 命令而无法更新 manifest；Job 在 pending、0 秒、无节点分配时立即精确取消，未消耗 GPU，step-50 checkpoint 与 run manifest 均未修改。
+- 根因是 formal submitter 与 batch lifecycle update 隐式依赖交互 shell 的 Conda PATH。两处现统一使用并验证项目绝对解释器 `$GPU_ENV/bin/python`，新增静态回归覆盖 init、submitted、running 和 final 状态更新。
+- veRL retention=1 的源码确认旧 checkpoint 会在新 checkpoint 成功写完后删除。为增加保存峰值余量，仅删除 69 MiB 可再生 pip 下载缓存；训练编译缓存、模型、数据、F01/F02 结果、失败日志和唯一 step-50 checkpoint 全部保留。
+- 完成本地/远端回归并推送修复后，以新 Job ID 重新提交 step-100 resume；科学设置、caps、retention 与 checkpoint 均不变。
