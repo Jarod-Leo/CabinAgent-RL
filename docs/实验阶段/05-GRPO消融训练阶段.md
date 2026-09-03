@@ -715,7 +715,8 @@
 #### 执行结果
 
 - 本地/远端 36 tests、Python compile、Bash syntax、三个同步文件 SHA-256、无 Conda shell 下的项目 Python 检查和 exact target=100 `sbatch --test-only` 均通过。
-- Job `137588` 于 2026-09-03 11:49:18 UTC 提交，11:49:49 UTC 在 `gpu-pro6000-7` 启动；manifest 已原子更新为 `running`，allocation 记录物理 GPU indices `0,5` 与两个不同 GPU UUID。当前仍在 simulator/policy 初始化阶段，尚未产生 step 51 指标。
+- Job `137588` 于 2026-09-03 11:49:18 UTC 提交，11:49:49 UTC 在 `gpu-pro6000-7` 启动；manifest 已原子更新为 `running`，allocation 记录物理 GPU indices `0,5` 与两个不同 GPU UUID。
+- Trainer 明确从 `global_step_50` 加载并将 global step 设为 50；初始 CAR dev mean@1 为 `0.230769`。新增 step 51 已完成：reward mean/range `0.0625/[0,1]`、advantage range `[-0.499999,1.499997]`、grad norm `0.0300013`、KL loss `0.0006214`、clip fraction `0`，无 OOM/NaN/schema error；当前进度 `51/100`。
 
 #### 改进原因
 

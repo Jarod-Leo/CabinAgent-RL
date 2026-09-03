@@ -637,5 +637,6 @@
 
 - 提交器修复 Git `400794b` 已推送并同步集群；本地/远端 36 tests、compile、Bash syntax、文件 SHA-256、项目绝对 Python 和 Slurm test-only 全部通过。
 - Step-100 resume 已以新 Job `137588` 提交，并于 2026-09-03 11:49:49 UTC 在 `gpu-pro6000-7` 启动；同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB、12 小时，manifest 已为 running。
-- Allocation 显示物理 GPU indices `0,5` 和两个不同 GPU UUID；当前处于双模型初始化阶段。训练设置、caps `0.86/0.60`、retention `1/1` 与 step-50 完全冻结，无 successor。
+- Allocation 显示物理 GPU indices `0,5` 和两个不同 GPU UUID；trainer 已从 `global_step_50` 恢复并完成 step 51。该步 reward mean `0.0625`、advantage range `[-0.5,1.5]`、grad norm `0.0300013`、KL loss `0.0006214`、clip fraction 0，无 OOM/NaN/schema error。
+- 当前进度 `51/100`。训练设置、caps `0.86/0.60`、retention `1/1` 与 step-50 完全冻结，无 successor。
 - 下一验收是确认从 `global_step_50` 恢复并完成 step 51--100；保存成功后必须只保留 `global_step_100`。完成并记录前不提交 step 150 或 F11-F14。
