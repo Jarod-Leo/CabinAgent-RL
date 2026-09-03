@@ -616,3 +616,12 @@
 - 已在个人队列为空时删除完成恢复验证使命的 pilot `global_step_5` 和 stale marker；`storagemgr` 显示 SSD 从 `117.2` 降至 `85.8/150 GB`，当前完整 GRPO checkpoint 为 0。
 - 新 run `f10_formal_20260903_stage19` / Job `136868` 于 2026-09-03 05:11:13 UTC 提交，当前 `PENDING (Priority)`；请求同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB、12 小时，无 dependency/successor。
 - Run 从 validated corrected-F01 merged parent 初始化 fresh rank-32 LoRA，不继承 pilot checkpoint。排队/运行期间冻结执行代码；50/50 完成并记录前不提交下一 segment 或其他消融。
+
+### Stage 19: Formal F10 Step-50 Passed
+
+- Job `136868` 在 `gpu-pro6000-3` 使用同节点 2x Pro 6000 于 2026-09-03 05:12:05--07:43:33 UTC 完成，Slurm `COMPLETED`、exit `0:0`、运行 `2h31m28s`；50/50 optimizer steps、final validation 和 `global_step_50` checkpoint 均已落盘。
+- `21/50` 步（42%）产生非零 group-normalized outcome advantage 与有限非零 gradient，`29/50` 步为组内同分；800 条在线训练 trajectory 中 94 条 reward=1，mean reward `0.1175`。无 NaN、OOM、reward-schema error 或 aborted trajectory。
+- 有效 outcome 步 grad norm 为 `0.00935--0.12299`，rollout/actor correlation 平均 `0.999110`，rollout-correction KL 平均 `0.001020`，clip fraction 全程 0。Initial/final CAR dev mean@1 均为 `0.269231`，当前不作性能提升声明。
+- 平均/中位 step time 为 `172.06/170.60s`，平均吞吐 `1231.53 token/s`。Simulator/trainer 峰值显存为 `87,576/97,887 MiB`（89.47%）和 `94,529/97,887 MiB`（96.57%），不再提高显存占用参数。
+- 唯一完整 checkpoint 含 11 文件、`31,443,788,637` bytes；SSD 当前 `117.3/150 GB`。100% 进度后的 DataLoader worker traceback 与此前一致，因 checkpoint/final metrics/manifest/Slurm 均成功，记为非致命 shutdown warning。
+- Step-50 segment PASS；公开安全摘要已归档到 `reports/cluster/F10-FORMAL-136868/`。下一动作是在记录与 GitHub 推送后，从同一 checkpoint 独立恢复到 step 100；F11-F14 仍不启动。

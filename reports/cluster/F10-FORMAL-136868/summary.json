@@ -1,0 +1,56 @@
+{
+  "experiment_id": "F10-FORMAL",
+  "attempt": 1,
+  "slurm_job_id": 136868,
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "elapsed": "02:31:28",
+  "optimizer_steps": 50,
+  "effective_outcome_gradient_steps": 21,
+  "effective_outcome_gradient_ratio": 0.42,
+  "zero_outcome_advantage_steps": 29,
+  "training_trajectories": 800,
+  "successful_training_trajectories": 94,
+  "mean_training_reward": 0.1175,
+  "gradient_norm": {
+    "min_all_steps": 9.828560905589256e-06,
+    "max_all_steps": 0.1229938343167305,
+    "mean_all_steps": 0.01773625021537009,
+    "min_effective_outcome_steps": 0.009347858838737011,
+    "max_effective_outcome_steps": 0.1229938343167305,
+    "mean_effective_outcome_steps": 0.04131129512398016
+  },
+  "rollout_actor_probability_correlation_mean": 0.9991102707386017,
+  "rollout_correction_kl_mean": 0.001020032812084537,
+  "clip_fraction_min": 0.0,
+  "clip_fraction_max": 0.0,
+  "step_time_seconds": {
+    "mean": 172.05937445117355,
+    "median": 170.6047838886734,
+    "min": 124.80756775289774,
+    "max": 278.06121709709987
+  },
+  "throughput_tokens_per_second_mean": 1231.5313316941105,
+  "car_dev_mean_at_1": {
+    "initial": 0.2692307692307692,
+    "final": 0.2692307692307692
+  },
+  "gpu_peak_memory_mib": {
+    "simulator": 87576,
+    "trainer": 94529,
+    "total_per_gpu": 97887
+  },
+  "checkpoint": {
+    "step": 50,
+    "file_count": 11,
+    "bytes": 31443788637,
+    "full_grpo_checkpoint_count": 1
+  },
+  "fatal_error_counts": {
+    "oom": 0,
+    "nan": 0,
+    "reward_schema": 0
+  },
+  "nonfatal_shutdown_warning": true,
+  "pass": true
+}

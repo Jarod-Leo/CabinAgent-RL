@@ -152,10 +152,10 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，正式 F10 step-50 Job `136868` 排队 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，正式 F10 step-50 已 PASS，准备恢复到 step 100 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot 与独立 resume 均已 PASS。正式 fallback F10 已从同一冻结父模型新建 fresh RL LoRA，首个 step-50 segment 为 Job `136868`。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot、独立 resume 与正式 step-50 segment 均已 PASS。正式 F10 将从唯一的 `global_step_50` checkpoint 连续恢复到 step 100。
 
 ## 9. 实验记录契约
 
@@ -183,7 +183,7 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 ## 11. 当前门槛
 
 - 已完成 Direct-RL 配置转换、真实 CAR runtime/agent-loop、parquet 生成器、rollout gate、五组优势/reward 和依赖式 Slurm 流水线。
-- GPU 环境、7B/72B-AWQ 模型、CAR parquet、optimized simulator smoke 和 Direct-RL/fallback gates 已完成；G02、G03、G04 的合法 FAIL 结论全部保留，corrected-F01 F10 pilot/resume 已 PASS，当前进入正式 F10 step-50 segment 准备。
+- GPU 环境、7B/72B-AWQ 模型、CAR parquet、optimized simulator smoke 和 Direct-RL/fallback gates 已完成；G02、G03、G04 的合法 FAIL 结论全部保留，corrected-F01 F10 pilot/resume 与正式 step-50 segment 已 PASS，当前准备从 step 50 恢复到 step 100。
 - `checkpoints/sft_lora` 空目录不是 checkpoint，也不再是正式训练前置条件。
 - `scripts/submit_full_pipeline.sh` 只提交 QoS 允许的前五段 `afterok` 依赖；gate PASS 后由完成中的作业提交 2-step trainer smoke，此后每个成功训练阶段只提交下一组。Gate FAIL 或任一 trainer 失败时链条立即停止，且始终不超过 `msc` 的 5-job submit limit。
 - G00 `131880` 已真实完成 80 条双模型 trajectory：parse `0.996667`、executable `0.989062`、success `27/80`、loop/max-turn `0.0125`，但 mixed outcome group ratio 仅 `0.10 < 0.20`。复核还发现 initial-user group consistency 为 `0.85`；因此训练未启动。
@@ -232,4 +232,4 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - Pilot 只允许调整不改变实验语义的系统吞吐参数；group size、每步 task 数、有效 batch、sampling、长度/轮数、reward/advantage、LoRA、优化器/LR、数据和 simulator 全部冻结。初始目标保留约 10%-15% 动态显存余量，根据 telemetry 在 pilot/resume 边界人工调整，正式分支使用统一冻结设置。
 - F10 pilot 与 step-6 resume 已通过，fallback GRPO 的训练/保存/恢复基础设施闭环成立；正式 F10 已解锁，但 F11-F14 不自动串联。若正式 F10 持续缺少有效 outcome advantage，再按既定分支讨论独立 F13 PRM-Lite 诊断；只有 F13 仍无有效梯度时才讨论模型迁移。
 - 正式 F10 保持 250-step 总目标与 `50/100/150/200/250` 保存/评测点，但按这些边界拆为独立可恢复 Slurm segment；每段验收后才提交下一段。该调度方式连续恢复 model/optimizer/extra，不改变科学设置，并配合 SSD 仅保留最新 1 个完整 checkpoint。
-- 正式 F10 run `f10_formal_20260903_stage19` 的首个 segment 已提交为 Job `136868`，当前 `PENDING (Priority)`；执行代码固定为 Git `9096f74`，target/save/eval `50/50/50`，无 successor。Pilot checkpoint 已删除，提交前 SSD 使用为 `85.8/150 GB`。
+- 正式 F10 run `f10_formal_20260903_stage19` 的首个 segment Job `136868` 已 `COMPLETED/0:0`：50/50 steps，`21/50` 步具有有效 outcome-gradient，唯一 `global_step_50` checkpoint 已保存；initial/final CAR dev mean@1 均为 `0.269231`，尚不支持性能提升声明。当前证据支持按冻结路线恢复到 step 100，而不是提前切换 F13 或模型。

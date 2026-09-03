@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 pilot 与 step-6 resume 均已 PASS；正式 fallback F10 已按 50-step 可恢复分段启动，首段 Job `136868` 当前排队，目标从 fresh corrected-F01 parent + rank-32 RL LoRA 训练到 step 50。
+进行中：F10 pilot、step-6 resume 与正式 step-50 segment 均已 PASS；Job `136868` 已生成唯一的 `global_step_50` 可恢复 checkpoint。按冻结分段路线，下一动作是从该 checkpoint 恢复到 step 100。
 
 ## 目标
 
@@ -43,7 +43,7 @@
 ## 执行结果
 
 - E10-E14：未启动；阻塞原因是 G02 mixed outcome group ratio `0.0`。
-- F10-F14 正式 run：F10 首个 step-50 segment 已提交为 Job `136868`；F11-F14 未启动且不会自动串联。
+- F10-F14 正式 run：F10 首个 step-50 segment Job `136868` 已 PASS；F11-F14 未启动且不会自动串联。
 - F10 pilot 已产生 `global_step_5` 可恢复 checkpoint；初始/最终 CAR dev mean@1 为 `0.230769/0.269231`，仅作五步集成诊断，不解释为性能提升。
 
 ## 已完成改进
@@ -661,16 +661,26 @@
 
 - Job `136868` 于 2026-09-03 05:11:13 UTC 提交，当前 `PENDING (Priority)`、start time unknown。Slurm 已确认 `ReqTRES=cpu=8,mem=180G,node=1,gres/gpu:pro6000=2`。
 - Fresh run manifest 为 submitted，checkpoint 目录为空；冻结的 `config.yaml` 与 `grpo_common.yaml` 已写入 run。当前正式 F10 为 `0/50` optimizer steps。
+- Job 实际于 2026-09-03 05:12:05 UTC 在 `gpu-pro6000-3` 启动，07:43:33 UTC 以 `COMPLETED`、exit `0:0` 结束，运行 `02:31:28`；实际资源为同一物理节点 2x Pro 6000、2 tasks、8 CPU、180 GiB。
+- 训练完成 `50/50` optimizer steps。`21/50` 步（42%）具有非零 group-normalized outcome advantage 和有限非零 gradient，`29/50` 步 outcome advantage 全零；有效 outcome 步的 grad norm 范围/均值为 `0.00935--0.12299/0.04131`。全部 50 步 grad norm 有限，范围/均值为 `9.83e-6--0.12299/0.01774`。
+- 50 个 batch 共 800 条在线训练 trajectory，其中 94 条 reward=1，mean reward `0.1175`。每十步有效 outcome-gradient 数为 `6/2/4/5/4`，没有出现连续退化为全零信号的趋势。
+- Rollout/actor probability correlation 平均 `0.999110`，rollout-correction KL 平均 `0.001020`，50 步 clip fraction 均为 0；无 NaN、OOM、reward-schema error 或 aborted trajectory。
+- 初始/最终 CAR dev mean@1 均为 `0.269230769`，因此当前只支持“训练信号与运行时健康”，不支持性能已提升的结论。平均/中位 step time 为 `172.06/170.60s`，平均吞吐 `1231.53 token/s`。
+- `global_step_50` 已保存 model/optimizer/extra/data 状态，共 11 个文件、`31,443,788,637` bytes；`latest_checkpointed_iteration.txt=50`。全项目仅此 1 个完整 GRPO checkpoint，符合 retention=1，`storagemgr` 为 `117.3/150 GB`。
+- Simulator/trainer telemetry 各 1804/1803 个样本，显存峰值为 `87,576/97,887 MiB`（89.47%）和 `94,529/97,887 MiB`（96.57%），两卡最大利用率均 100%；trainer 余量已很小，不提高显存占用参数。
+- 进度达到 100% 后出现与 pilot/resume 一致的 Ray DataLoader worker shutdown traceback；checkpoint、step-50/final validation metrics、manifest 与 Slurm exit 均成功，故记录为非致命 shutdown warning。公开安全的派生摘要归档于 `reports/cluster/F10-FORMAL-136868/`，原始对话日志不进入公开仓库。
 
 #### 改进原因
 
 - Pilot 已证明有效 outcome gradient、完整 checkpoint 和独立恢复；正式基线需要在不改写历史 gate FAIL 的前提下扩大到预注册的 250 steps，并在每个 50-step 边界保存和评测。
 - 采用分段恢复是为配合 150 GB SSD 与最新 1 个完整 checkpoint 策略，同时让每个边界先做健康检查；模型、优化器和 extra state 连续，不改变训练语义。
+- Step-50 实测的有效 outcome-gradient 比例为 42%，明显不同于“持续无有效梯度”的失败分支；虽然独立 dev 指标暂未上升，但当前证据支持继续同一 F10，而不是提前切换 F13 或模型。
 
 #### 改进措施
 
 - 排队/运行期间冻结执行代码、配置和所有科学/吞吐参数；监测 Slurm、manifest、双卡 telemetry、逐 step reward/advantage/gradient/KL/clip、step time、checkpoint 和 final validation。
 - Step-50 PASS 要求完成 50/50、无 NaN/OOM/schema error、产生可恢复 `global_step_50` 且仍最多 1 个完整 checkpoint；单步同分允许存在，但需报告 50 steps 中有效 outcome-gradient 的频率与分布。完成并记录前不提交 step-100 resume 或 F11-F14。
+- 上述 PASS 标准均已满足。保持 Git `9096f74` 对应执行路径、全部科学设置、caps `0.86/0.60` 和 retention `1/1` 不变；完成本 attempt 的四处记录、公开安全归档和 GitHub 推送后，允许从 `global_step_50` 人工提交 target=100 的独立 resume segment。
 
 ## 结果记录要求
 
