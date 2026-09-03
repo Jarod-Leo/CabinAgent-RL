@@ -137,6 +137,19 @@ class TrainingConfigTests(unittest.TestCase):
         self.assertIn("save_freq=-1", submitter)
         self.assertIn("SAVE_FREQ=$save_freq", submitter)
 
+        formal_submitter = (ROOT / "scripts/submit_f10_formal.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("NEXT_TRAINING_STAGE", formal_submitter)
+        self.assertIn("50|100|150|200|250", formal_submitter)
+        self.assertIn("SAVE_FREQ=50", formal_submitter)
+        self.assertIn("EVAL_FREQ=50", formal_submitter)
+        self.assertIn("MAX_ACTOR_CKPT_TO_KEEP:-1", formal_submitter)
+        self.assertIn("MAX_CRITIC_CKPT_TO_KEEP:-1", formal_submitter)
+        self.assertIn("SIMULATOR_GPU_MEMORY_UTILIZATION:-0.86", formal_submitter)
+        self.assertIn("ROLLOUT_GPU_MEMORY_UTILIZATION:-0.60", formal_submitter)
+        self.assertIn("scripts/slurm_f10_pilot.sbatch", formal_submitter)
+
         packed_smoke = (ROOT / "scripts/check_packed_entropy.py").read_text(
             encoding="utf-8"
         )

@@ -603,3 +603,9 @@
 - Simulator/trainer 峰值显存为 `87,575/97,887 MiB`（89.47%）与 `90,932/97,887 MiB`（92.89%），最大利用率均 100%；没有 NaN、OOM 或 reward-schema error。结束时的 DataLoader worker traceback 发生在 100% 进度后，Slurm/manifest/final metrics 均正常，记为非致命 shutdown warning。
 - `SAVE_FREQ=-1` 生效：全项目仍只有约 30 GiB 的 `global_step_5`，没有新增 `global_step_6`。精选日志、telemetry、manifest 和小型恢复元数据已归档到 `reports/cluster/F10-RESUME-136347/`。
 - F10 五步信号门禁与独立恢复门禁均已闭合。正式 fallback F10 解锁；下一步从 corrected-F01 merged parent 新建 fresh rank-32 LoRA，先处理 pilot checkpoint 存储，再完成 formal 250-step config 验证与独立提交，不自动启动其他消融。
+
+### Stage 19: Formal F10 Step-50 Preparation
+
+- 正式 F10 总目标仍为 250 steps，但按 `50/100/150/200/250` 评测点拆为独立可恢复 segment；每段完成、记录、归档后才人工提交下一段，优化器/model/extra 状态连续且无自动 successor。
+- 新增 formal F10 submitter：start 只允许 fresh run 到 step 50，resume 只允许后续四个冻结边界；保存/评测 frequency `50/50`、checkpoint retention `1/1`，其余模型、数据、4x4 rollout、sampling、reward/advantage、LoRA、LR、packed/chunked 路径、offload、memory caps 与双卡拓扑继承已通过的 pilot。
+- 下一步先完成本地测试与代码推送，再同步集群；校验删除 pilot checkpoint 后实时检查集群和 SSD，最后仅提交正式 F10 的 step-50 segment。

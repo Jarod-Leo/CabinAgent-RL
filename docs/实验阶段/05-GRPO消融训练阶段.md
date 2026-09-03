@@ -624,6 +624,28 @@
 - 上述恢复 PASS 标准已满足。正式 fallback F10 解锁；按实验家族契约从同一 corrected-F01 merged parent 新建 fresh rank-32 RL LoRA，不从 pilot checkpoint 继续训练，也不自动启动 F11-F14。
 - 正式 F10 提交前先归档并删除已完成验证使命的 pilot 完整 checkpoint，以维持 SSD“仅 1 个最新完整 checkpoint”策略；再实时核对集群资源、完成 formal config/test-only，并以新 run/Job ID 提交。
 
+### Formal F10 step-50 preparation / local
+
+#### 实验设置
+
+- 正式 F10 总目标保持 250 optimizer steps，评测/保存边界保持 `50/100/150/200/250`；实际调度拆为五个可恢复的 50-step segment，每段完成和记录后才人工提交下一段，不改变数据顺序、优化器状态或训练目标。
+- 首段从 validated corrected-F01 merged parent 初始化 fresh rank/alpha `32/32` all-linear RL LoRA，target=`50`、save/eval frequency=`50`、actor/critic retention=`1`。复用已通过 pilot/resume 的 packed/chunked 路径、`0.86/0.60` memory caps、4x4 rollout 和同节点双卡 runtime，不从 pilot checkpoint 继承。
+
+#### 执行结果
+
+- 新增 `scripts/submit_f10_formal.sh`：start 仅允许 target 50，resume 仅允许 100/150/200/250；每次独立提交、最长 12 小时、无 `NEXT_TRAINING_STAGE` 或 automatic successor。
+- 尚未删除 pilot checkpoint、同步集群或提交 formal Slurm job；当前正式 F10 optimizer steps 为 0。
+
+#### 改进原因
+
+- 一个完整 FSDP checkpoint 约 30 GiB，而 SSD 配额 150 GiB。一次性 250-step job 不利于在每个 50-step 边界先验收、归档和处理 checkpoint，也会削弱失败定位与恢复边界。
+- Step-6 已证明 model/optimizer/extra 可由新 Slurm 作业连续恢复，因此按评测点分段不会重置训练状态；它只改变调度边界，不改变正式实验的科学设置。
+
+#### 改进措施
+
+- 本地与远端必须验证 formal override 恰为 target/save/eval `50/50/50`、fresh run 不含 checkpoint、retention `1/1`、无 successor，且继续使用单一 `srun --ntasks=2 --gpus-per-task=1 --gpu-bind=single:1`。
+- 提交前先校验并删除 pilot `global_step_5`，然后实时核对 account/QoS/GPU/队列/SSD；全部通过后仅提交 formal F10 step-50 segment。
+
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、每个评测点的 CAR dev/BFCL 结果和失败样例；完整可恢复 checkpoint 在 SSD 仅保留最新 1 个，失败/被轮换 checkpoint 的小型元数据与结论继续归档，不删除 attempt 历史。
