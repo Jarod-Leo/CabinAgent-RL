@@ -1,0 +1,45 @@
+job_id=136347
+phase=resume
+node=gpu-pro6000-10
+job_nodelist=gpu-pro6000-10
+job_gpus=2,3
+max_training_steps=6
+simulator_gpu_memory_utilization=0.86
+rollout_gpu_memory_utilization=0.60
+rollout_max_num_batched_tokens=16384
+JobId=136347 JobName=car-f10-resume
+   UserId=jiatian001(295800056) GroupId=jiatian001(295800056) MCS_label=N/A
+   Priority=1 Nice=0 Account=msc QOS=msc
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   DerivedExitCode=0:0
+   RunTime=00:00:01 TimeLimit=06:00:00 TimeMin=N/A
+   SubmitTime=2026-09-02T16:43:12 EligibleTime=2026-09-02T16:43:12
+   AccrueTime=2026-09-02T16:43:12
+   StartTime=2026-09-02T16:43:38 EndTime=2026-09-02T22:43:38 Deadline=N/A
+   PreemptEligibleTime=2026-09-02T16:43:38 PreemptTime=None
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-02T16:43:38 Scheduler=Backfill
+   Partition=cluster02 AllocNode:Sid=login-3:4007328
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=gpu-pro6000-10
+   BatchHost=gpu-pro6000-10
+   NumNodes=1 NumCPUs=8 NumTasks=2 CPUs/Task=4 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=8,mem=180G,node=1,billing=16,gres/gpu=2,gres/gpu:pro6000=2
+   AllocTRES=cpu=8,mem=180G,node=1,billing=16,gres/gpu=2,gres/gpu:pro6000=2
+   Socks/Node=* NtasksPerN:B:S:C=2:0:*:* CoreSpec=*
+   JOB_GRES=gpu:pro6000:2
+     Nodes=gpu-pro6000-10 CPU_IDs=8-15 Mem=184320 GRES=gpu:pro6000:2(IDX:2-3)
+   MinCPUsNode=8 MinMemoryNode=180G MinTmpDiskNode=0
+   Features=highmem DelayBoot=00:00:00
+   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
+   Command=/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/scripts/slurm_f10_pilot.sbatch
+   WorkDir=/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL
+   StdErr=/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/logs/slurm/car-f10-resume-136347.err
+   StdIn=/dev/null
+   StdOut=/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL/logs/slurm/car-f10-resume-136347.out
+   Power=
+   TresPerNode=gres/gpu:pro6000:2
+   
+
+GPU 0: NVIDIA RTX PRO 6000 Blackwell Server Edition (UUID: GPU-39907ec1-53c9-19b3-1bb4-ddbc35b865ab)
+GPU 1: NVIDIA RTX PRO 6000 Blackwell Server Edition (UUID: GPU-15b932ee-709f-94d5-a5ef-561f722b2e0d)

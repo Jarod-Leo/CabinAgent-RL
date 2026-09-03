@@ -595,3 +595,11 @@
 - Git `c6800f8` 已推送公开 GitHub；远端 36 tests、compileall、Bash syntax、veRL rendering、retention 字段源码核对和 Slurm test-only 全部通过。
 - 同一 run 的 resume 已提交为 Job `136347`，2026-09-02 16:43:12 UTC 起处于 `PENDING (Priority)`；目标从 `global_step_5` 自动恢复到 total step 6，同节点 2x Pro 6000、无依赖、无 successor。
 - Resume 冻结 attempt 9 的模型/数据/采样/reward/advantage/优化器/显存参数，使用 `SAVE_FREQ=-1` 和 retention `1/1`；验收时必须证明 step 6 完成且仍只存在原 step-5 checkpoint。
+
+### Stage 18: F10 Step-6 Resume Passed
+
+- Job `136347` 在 `gpu-pro6000-10` 使用同节点 2x Pro 6000 于 2026-09-02 16:43:38--16:54:48 UTC 完成，Slurm `COMPLETED`、exit `0:0`、运行 `11m10s`；日志确认从 `global_step_5` 恢复 model/optimizer/extra 状态并完成 step 6 与 final validation。
+- Step 6 reward/advantage 全零、`pg_loss=0`，仅 KL loss `5.53149e-4` 产生 `grad_norm=1.17578e-5`；该结果不单独证明 outcome 学习，但恢复基础设施 PASS，且 attempt 9 的 step 1/2/3/5 已提供有效 outcome-gradient 证据。
+- Simulator/trainer 峰值显存为 `87,575/97,887 MiB`（89.47%）与 `90,932/97,887 MiB`（92.89%），最大利用率均 100%；没有 NaN、OOM 或 reward-schema error。结束时的 DataLoader worker traceback 发生在 100% 进度后，Slurm/manifest/final metrics 均正常，记为非致命 shutdown warning。
+- `SAVE_FREQ=-1` 生效：全项目仍只有约 30 GiB 的 `global_step_5`，没有新增 `global_step_6`。精选日志、telemetry、manifest 和小型恢复元数据已归档到 `reports/cluster/F10-RESUME-136347/`。
+- F10 五步信号门禁与独立恢复门禁均已闭合。正式 fallback F10 解锁；下一步从 corrected-F01 merged parent 新建 fresh rank-32 LoRA，先处理 pilot checkpoint 存储，再完成 formal 250-step config 验证与独立提交，不自动启动其他消融。

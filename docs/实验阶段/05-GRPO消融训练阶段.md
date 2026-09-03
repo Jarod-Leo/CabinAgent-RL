@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 packed-path attempt 9 已完成 5/5 optimizer steps，step 1/2/3/5 均产生 mixed reward、非零 advantage 与有限非零 gradient，step-5 checkpoint 已保存，五步门禁 PASS；当前准备从同一 checkpoint 独立恢复到 step 6，正式 F10-F14 仍等待 resume 验收。
+进行中：F10 packed-path attempt 9 已完成 5/5 optimizer steps，step 1/2/3/5 均产生 mixed reward、非零 advantage 与有限非零 gradient；step-6 resume `136347` 已从 step-5 checkpoint 完成独立恢复，恢复闭环 PASS。正式 fallback F10 已解锁，下一步按冻结设置准备 250-step run。
 
 ## 目标
 
@@ -43,7 +43,7 @@
 ## 执行结果
 
 - E10-E14：未启动；阻塞原因是 G02 mixed outcome group ratio `0.0`。
-- F10-F14 正式 run：未启动。F02/G04 已作为负结果结束；只授权 F10 pilot，formal family 等待人工验收。
+- F10-F14 正式 run：未启动。F02/G04 已作为负结果结束；F10 pilot 与 resume 已人工验收通过，正式 fallback F10 已解锁。
 - F10 pilot 已产生 `global_step_5` 可恢复 checkpoint；初始/最终 CAR dev mean@1 为 `0.230769/0.269231`，仅作五步集成诊断，不解释为性能提升。
 
 ## 已完成改进
@@ -605,16 +605,24 @@
 
 - 提交前远端 36 tests、`compileall`、Bash syntax、veRL override rendering 与 `sbatch --test-only` 全部通过；渲染确认 total steps `6`、resume auto、save frequency `-1`、retention `1/1`、packed/chunked 路径不变。Installed veRL 源码与默认配置均确认支持两个 retention 字段。
 - Job `136347` 于 2026-09-02 16:43:12 UTC 提交，当前 `PENDING (Priority)`、无 dependency，申请资源为 1 node/2 Pro 6000/2 tasks/8 CPU/180 GiB。`submissions.tsv` 已追加 resume 行；当前仍仅有 `global_step_5` 一个 GRPO checkpoint。
+- Job 实际于 2026-09-02 16:43:38 UTC 在 `gpu-pro6000-10` 启动，16:54:48 UTC 以 `COMPLETED`、exit `0:0` 结束，总时长 `11m10s`；资源实际为同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB。
+- 日志明确打印从 `global_step_5` 恢复并将 global step 设为 5；checkpoint 内容配置为 `model/optimizer/extra`，随后完成 step 6 和 final validation。Step 6 reward/advantage 全零，`pg_loss=0`，但有限 KL loss `5.53149e-4` 产生有限 `grad_norm=1.17578e-5`；该单步只验证恢复，不作为 outcome 学习信号证据。
+- Step 6 rollout/actor 概率相关性为 `0.999194`，rollout-correction KL `0.0007705`，step time `173.23s`，吞吐 `1186.59 token/s`；initial/final CAR dev mean@1 均为 `0.230769`，不作性能声明。
+- Simulator/trainer telemetry 各 131 个样本，显存峰值分别为 `87,575/97,887 MiB`（89.47%）和 `90,932/97,887 MiB`（92.89%），最大利用率均 100%。全项目仍只有约 30 GiB 的 `global_step_5`，没有 `global_step_6`，retention/no-save 策略生效。
+- 训练进度到 100% 后再次出现 Ray DataLoader worker shutdown traceback，但 final metrics 已输出、Slurm 与全部 steps 均为 `COMPLETED/0:0`、manifest 为 completed；与 attempt 9 一致，记录为非致命 shutdown warning。精选证据已校验归档到 `reports/cluster/F10-RESUME-136347/`。
 
 #### 改进原因
 
 - 五步 attempt 9 已验证从 fresh LoRA 训练和保存 checkpoint；pilot 闭环还缺独立 Slurm 进程实际加载 optimizer/model/data 状态并继续完成 step 6 的证据。
 - SSD 仅余约 32.9 GiB，而一个完整 checkpoint 约 30 GiB；恢复验证若创建第二份 checkpoint 会使存储余量接近零，因此该单步仅验证可恢复性与继续训练，不保存新的恢复点。
+- 恢复结果证明 model、optimizer、extra/data 状态可由独立 Slurm 进程继续训练；step 6 的 outcome advantage 全零属于该批 rollout 同分，不是恢复失败，也不取代 attempt 9 已获得的四个有效 outcome-gradient steps。
 
 #### 改进措施
 
 - 排队/运行期间冻结执行脚本与代码。完成后核对 Slurm 状态、checkpoint load 日志、step-6 reward/advantage/gradient/KL/step time、final validation、双卡 telemetry 与 checkpoint 目录数量。
 - PASS 标准：真实从 step 5 加载且完成第 6 个 optimizer step，无 NaN/OOM/schema error，原 step-5 checkpoint 完整存在且没有新增 `global_step_6`；无论成功或失败，先完成本 attempt 四节结果更新再决定正式 F10-F14。
+- 上述恢复 PASS 标准已满足。正式 fallback F10 解锁；按实验家族契约从同一 corrected-F01 merged parent 新建 fresh rank-32 RL LoRA，不从 pilot checkpoint 继续训练，也不自动启动 F11-F14。
+- 正式 F10 提交前先归档并删除已完成验证使命的 pilot 完整 checkpoint，以维持 SSD“仅 1 个最新完整 checkpoint”策略；再实时核对集群资源、完成 formal config/test-only，并以新 run/Job ID 提交。
 
 ## 结果记录要求
 
