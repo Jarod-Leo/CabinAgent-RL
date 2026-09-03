@@ -152,10 +152,10 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，正式 F10 step-50 已 PASS，准备恢复到 step 100 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，正式 F10 step-100 resume Job `137588` 运行中 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot、独立 resume 与正式 step-50 segment 均已 PASS。正式 F10 将从唯一的 `global_step_50` checkpoint 连续恢复到 step 100。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot、独立 resume 与正式 step-50 segment 均已 PASS。正式 F10 正由 Job `137588` 从唯一的 `global_step_50` checkpoint 连续恢复到 step 100。
 
 ## 9. 实验记录契约
 
@@ -234,3 +234,4 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - 正式 F10 保持 250-step 总目标与 `50/100/150/200/250` 保存/评测点，但按这些边界拆为独立可恢复 Slurm segment；每段验收后才提交下一段。该调度方式连续恢复 model/optimizer/extra，不改变科学设置，并配合 SSD 仅保留最新 1 个完整 checkpoint。
 - 正式 F10 run `f10_formal_20260903_stage19` 的首个 segment Job `136868` 已 `COMPLETED/0:0`：50/50 steps，`21/50` 步具有有效 outcome-gradient，唯一 `global_step_50` checkpoint 已保存；initial/final CAR dev mean@1 均为 `0.269231`，尚不支持性能提升声明。当前证据支持按冻结路线恢复到 step 100，而不是提前切换 F13 或模型。
 - Step-100 首次提交 Job `137581` 在节点分配前取消：新 SSH shell 无裸 `python`，导致 `sbatch` 后的 manifest update 失败；0 GPU、0 step，checkpoint 未变。Formal submitter 与 batch lifecycle update 改为显式 `$GPU_ENV/bin/python`，回归通过后用新 Job ID 重提，科学路线不变。
+- 修复版 step-100 resume Job `137588` 已在 `gpu-pro6000-7` 启动，manifest running，同节点两块 Pro 6000 绑定成立；当前等待完成 checkpoint load 与 step 51--100，期间不提交 step 150 或其他消融。

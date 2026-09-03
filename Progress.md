@@ -632,3 +632,10 @@
 - 根因是 formal submitter 与 batch lifecycle update 隐式依赖交互 shell 的 Conda PATH。两处现统一使用并验证项目绝对解释器 `$GPU_ENV/bin/python`，新增静态回归覆盖 init、submitted、running 和 final 状态更新。
 - veRL retention=1 的源码确认旧 checkpoint 会在新 checkpoint 成功写完后删除。为增加保存峰值余量，仅删除 69 MiB 可再生 pip 下载缓存；训练编译缓存、模型、数据、F01/F02 结果、失败日志和唯一 step-50 checkpoint 全部保留。
 - 完成本地/远端回归并推送修复后，以新 Job ID 重新提交 step-100 resume；科学设置、caps、retention 与 checkpoint 均不变。
+
+### Stage 19: Formal F10 Step-100 Resume Running
+
+- 提交器修复 Git `400794b` 已推送并同步集群；本地/远端 36 tests、compile、Bash syntax、文件 SHA-256、项目绝对 Python 和 Slurm test-only 全部通过。
+- Step-100 resume 已以新 Job `137588` 提交，并于 2026-09-03 11:49:49 UTC 在 `gpu-pro6000-7` 启动；同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB、12 小时，manifest 已为 running。
+- Allocation 显示物理 GPU indices `0,5` 和两个不同 GPU UUID；当前处于双模型初始化阶段。训练设置、caps `0.86/0.60`、retention `1/1` 与 step-50 完全冻结，无 successor。
+- 下一验收是确认从 `global_step_50` 恢复并完成 step 51--100；保存成功后必须只保留 `global_step_100`。完成并记录前不提交 step 150 或 F11-F14。

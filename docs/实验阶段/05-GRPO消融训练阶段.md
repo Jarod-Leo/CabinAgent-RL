@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 pilot、step-6 resume 与正式 step-50 segment 均已 PASS；Job `136868` 已生成唯一的 `global_step_50` 可恢复 checkpoint。按冻结分段路线，下一动作是从该 checkpoint 恢复到 step 100。
+进行中：F10 pilot、step-6 resume 与正式 step-50 segment 均已 PASS；Job `137588` 正在从唯一的 `global_step_50` checkpoint 恢复训练到 step 100。
 
 ## 目标
 
@@ -43,7 +43,7 @@
 ## 执行结果
 
 - E10-E14：未启动；阻塞原因是 G02 mixed outcome group ratio `0.0`。
-- F10-F14 正式 run：F10 首个 step-50 segment Job `136868` 已 PASS；F11-F14 未启动且不会自动串联。
+- F10-F14 正式 run：F10 首个 step-50 segment Job `136868` 已 PASS，step-100 resume Job `137588` 正在运行；F11-F14 未启动且不会自动串联。
 - F10 pilot 已产生 `global_step_5` 可恢复 checkpoint；初始/最终 CAR dev mean@1 为 `0.230769/0.269231`，仅作五步集成诊断，不解释为性能提升。
 
 ## 已完成改进
@@ -704,6 +704,28 @@
 - Formal submitter 与 F10 batch 脚本均显式解析并验证 `$GPU_ENV/bin/python`，所有 manifest/init 调用使用该绝对解释器，不再依赖交互 shell activation。
 - 增加静态回归，要求 submitter 的 init/update 和 batch 的 running/final update 均使用 `PYTHON_BIN`。本地测试、远端 Bash syntax、无 Conda shell 下的解释器检查与 Slurm test-only 全部通过后，才以新 Job ID 重提 step 100。
 - 存储峰值方面，veRL retention=1 已核实为新 checkpoint 成功保存后才删除旧 checkpoint；保留 CUDA/Triton/vLLM 编译缓存以避免减速，仅删除已确认无用且可再生的 69 MiB pip 下载缓存。模型、数据、F01/F02 结果、失败证据与 step-50 checkpoint 均保留。
+
+### Formal F10 step-100 resume attempt 2 / Slurm 137588
+
+#### 实验设置
+
+- Run `experiments/f10_formal_20260903_stage19` 从 `global_step_50` 恢复到 total step 100；执行提交/生命周期代码为 Git `400794b`，训练代码、初始 manifest source/config digest 与 step-50 保持不变。
+- Save/eval=`50/50`、retention=`1/1`、outcome GRPO、4x4 rollout、seed、LR、LoRA、长度、simulator、packed/chunked 路径、offload 和 caps `0.86/0.60` 全部冻结。Slurm 为同一物理节点 2x Pro 6000、2 tasks、8 CPU、180 GiB、12 小时，无 successor。
+
+#### 执行结果
+
+- 本地/远端 36 tests、Python compile、Bash syntax、三个同步文件 SHA-256、无 Conda shell 下的项目 Python 检查和 exact target=100 `sbatch --test-only` 均通过。
+- Job `137588` 于 2026-09-03 11:49:18 UTC 提交，11:49:49 UTC 在 `gpu-pro6000-7` 启动；manifest 已原子更新为 `running`，allocation 记录物理 GPU indices `0,5` 与两个不同 GPU UUID。当前仍在 simulator/policy 初始化阶段，尚未产生 step 51 指标。
+
+#### 改进原因
+
+- Attempt 1 已证明裸 `python` 会让新 SSH shell 的提交/运行生命周期失败；attempt 2 必须同时验证登录端 submitted update 和 compute-node running/final update 均能通过项目绝对解释器执行。
+- Step-50 的 42% 有效 outcome-gradient 比例满足继续 vanilla F10 的条件；当前没有切换 F13、修改超参数或迁移模型的证据。
+
+#### 改进措施
+
+- 运行期间冻结 Git `400794b` 对应执行脚本和所有训练设置，监测 checkpoint load、step 51--100 reward/advantage/gradient、双卡 telemetry、step-100 validation 与保存峰值。
+- PASS 标准为从 step 50 加载 model/optimizer/extra，完成 100/100，无 NaN/OOM/schema error，成功写出 `global_step_100` 后自动删除 `global_step_50`，全项目仍仅 1 个完整 checkpoint。完成并记录前不提交 step 150 或 F11-F14。
 
 ## 结果记录要求
 

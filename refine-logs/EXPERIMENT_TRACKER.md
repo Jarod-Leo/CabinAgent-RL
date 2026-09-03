@@ -48,6 +48,7 @@
 | F10-RESUME | 1 | complete | same F10 run; restore global_step_5; no new checkpoint | 136347 | 6/6 | 0.0 | zero at step 6 | 0.00001176 (KL-only) | experiments/f10_pilot_20260902_stage18_r8 | gpu-pro6000-10; 11m10s; model/optimizer/extra restored; no new checkpoint; nonfatal shutdown warning; resume PASS |
 | F10-FORMAL | 1 | complete | corrected F01 merged parent + fresh rank32 RL LoRA; segment 1 | 136868 | 50/50 | 0.269231 | 21/50 effective outcome-gradient steps | 0.1175 mean online reward | experiments/f10_formal_20260903_stage19 | gpu-pro6000-3; 2h31m28s; one step-50 checkpoint; no NaN/OOM/schema error; nonfatal shutdown warning |
 | F10-FORMAL-RESUME | 1 | cancelled | resume global_step_50; target 100 | 137581 | 50/100 | - | - | - | experiments/f10_formal_20260903_stage19 | Cancelled pending at 0s before allocation; submitter lacked bare python in fresh SSH shell; no GPU/step/checkpoint change |
+| F10-FORMAL-RESUME | 2 | running | resume global_step_50; target 100 | 137588 | 50/100 | - | - | - | experiments/f10_formal_20260903_stage19 | gpu-pro6000-7; manifest running; same-node 2x Pro 6000; frozen settings; no successor |
 | F11 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | Turn-Discount |
 | F12 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | LATA |
 | F13 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | PRM-Lite |
