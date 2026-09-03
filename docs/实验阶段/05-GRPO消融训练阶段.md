@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 packed-path attempt 9 已完成 5/5 optimizer steps，step 1/2/3/5 均产生 mixed reward、非零 advantage 与有限非零 gradient；step-6 resume `136347` 已从 step-5 checkpoint 完成独立恢复，恢复闭环 PASS。正式 fallback F10 已解锁，下一步按冻结设置准备 250-step run。
+进行中：F10 pilot 与 step-6 resume 均已 PASS；正式 fallback F10 已按 50-step 可恢复分段启动，首段 Job `136868` 当前排队，目标从 fresh corrected-F01 parent + rank-32 RL LoRA 训练到 step 50。
 
 ## 目标
 
@@ -43,7 +43,7 @@
 ## 执行结果
 
 - E10-E14：未启动；阻塞原因是 G02 mixed outcome group ratio `0.0`。
-- F10-F14 正式 run：未启动。F02/G04 已作为负结果结束；F10 pilot 与 resume 已人工验收通过，正式 fallback F10 已解锁。
+- F10-F14 正式 run：F10 首个 step-50 segment 已提交为 Job `136868`；F11-F14 未启动且不会自动串联。
 - F10 pilot 已产生 `global_step_5` 可恢复 checkpoint；初始/最终 CAR dev mean@1 为 `0.230769/0.269231`，仅作五步集成诊断，不解释为性能提升。
 
 ## 已完成改进
@@ -635,6 +635,8 @@
 
 - 新增 `scripts/submit_f10_formal.sh`：start 仅允许 target 50，resume 仅允许 100/150/200/250；每次独立提交、最长 12 小时、无 `NEXT_TRAINING_STAGE` 或 automatic successor。
 - 尚未删除 pilot checkpoint、同步集群或提交 formal Slurm job；当前正式 F10 optimizer steps 为 0。
+- Git `9096f74` 已推送并以 SHA-256 `fc26f23b410cc85c24126c2dbf533b66c5f33c6425ba4301af16a6a1181e3f79` 的代码包同步。远端 Bash syntax、36 tests、`compileall`、Hydra rendering 和 `sbatch --test-only` 全部通过；渲染确认 target/save/eval `50/50/50`、retention `1/1`、packed/chunked 与 caps 均正确。
+- Pilot `global_step_5` 及 1 字节 stale marker 已在无排队作业时精确删除；删除前路径、LoRA metadata 和 `data.pt` 均核对。`storagemgr` 显示 SSD 由 `117.2` 降至 `85.8/150 GB`，当前完整 GRPO checkpoint 数为 0。
 
 #### 改进原因
 
@@ -645,6 +647,30 @@
 
 - 本地与远端必须验证 formal override 恰为 target/save/eval `50/50/50`、fresh run 不含 checkpoint、retention `1/1`、无 successor，且继续使用单一 `srun --ntasks=2 --gpus-per-task=1 --gpu-bind=single:1`。
 - 提交前先校验并删除 pilot `global_step_5`，然后实时核对 account/QoS/GPU/队列/SSD；全部通过后仅提交 formal F10 step-50 segment。
+- 上述准备已完成；正式 attempt 已独立记录如下。排队/运行期间冻结 Git `9096f74` 对应执行代码。
+
+### Formal F10 step-50 segment attempt 1 / Slurm 136868
+
+#### 实验设置
+
+- Run `experiments/f10_formal_20260903_stage19`；执行代码 Git `9096f74`，manifest source/config SHA-256 为 `90267732151d8cb2648e5f01a7e2b04a81e09a8f62b74b2da886b336b1e886ae3` / `7fd65bc8b3f7b99866ac500e8bf05d9dbf524068b4e41054c9c05d971819dc05`。
+- 从 validated corrected-F01 merged parent 新建 fresh rank/alpha `32/32` all-linear LoRA；outcome GRPO、CAR train/dev、seed 42、4 tasks x4 rollouts、LR `1e-6`、32K/20-turn、72B simulator、packed/chunked entropy、offload 与 caps `0.86/0.60` 继承通过的 pilot，不加载任何 pilot RL checkpoint。
+- Segment target/save/eval=`50/50/50`，actor/critic retention=`1/1`；cluster02/msc、1 node、2x Pro 6000、2 tasks、8 CPU、180 GiB、12 小时，单一双 task `srun`，无 dependency 和 successor。
+
+#### 执行结果
+
+- Job `136868` 于 2026-09-03 05:11:13 UTC 提交，当前 `PENDING (Priority)`、start time unknown。Slurm 已确认 `ReqTRES=cpu=8,mem=180G,node=1,gres/gpu:pro6000=2`。
+- Fresh run manifest 为 submitted，checkpoint 目录为空；冻结的 `config.yaml` 与 `grpo_common.yaml` 已写入 run。当前正式 F10 为 `0/50` optimizer steps。
+
+#### 改进原因
+
+- Pilot 已证明有效 outcome gradient、完整 checkpoint 和独立恢复；正式基线需要在不改写历史 gate FAIL 的前提下扩大到预注册的 250 steps，并在每个 50-step 边界保存和评测。
+- 采用分段恢复是为配合 150 GB SSD 与最新 1 个完整 checkpoint 策略，同时让每个边界先做健康检查；模型、优化器和 extra state 连续，不改变训练语义。
+
+#### 改进措施
+
+- 排队/运行期间冻结执行代码、配置和所有科学/吞吐参数；监测 Slurm、manifest、双卡 telemetry、逐 step reward/advantage/gradient/KL/clip、step time、checkpoint 和 final validation。
+- Step-50 PASS 要求完成 50/50、无 NaN/OOM/schema error、产生可恢复 `global_step_50` 且仍最多 1 个完整 checkpoint；单步同分允许存在，但需报告 50 steps 中有效 outcome-gradient 的频率与分布。完成并记录前不提交 step-100 resume 或 F11-F14。
 
 ## 结果记录要求
 

@@ -46,6 +46,7 @@
 | PACKED-ENTROPY-SMOKE | 1 | complete | exact corrected-F01 parent + FA2 + fresh rank32 LoRA + packed chunked entropy | 135977 | 0 | - | - | 2.50868 | reports/packed_entropy_smoke_135977.json | gpu-pro6000-3; 44s; PASS; finite entropy/log-prob; peak reserved 15.05 GiB; next F10 unlocked |
 | F10 | 10 | complete | validated corrected-F01 parent + fresh rank32 RL LoRA + packed chunked entropy | 135987 | 5/5 | 0.0625/0.0625/0.0625/0.25/0.0625 | mixed on steps 1/2/3/5 | 0.071629/0.025236/0.017444/0.000017/0.035955 | experiments/f10_pilot_20260902_stage18_r8 | gpu-pro6000-11; 28m43s; step-5 checkpoint; no NaN/OOM; shutdown warning after artifacts saved; five-step pilot PASS |
 | F10-RESUME | 1 | complete | same F10 run; restore global_step_5; no new checkpoint | 136347 | 6/6 | 0.0 | zero at step 6 | 0.00001176 (KL-only) | experiments/f10_pilot_20260902_stage18_r8 | gpu-pro6000-10; 11m10s; model/optimizer/extra restored; no new checkpoint; nonfatal shutdown warning; resume PASS |
+| F10-FORMAL | 1 | queued | corrected F01 merged parent + fresh rank32 RL LoRA; segment 1 | 136868 | target 50 | - | - | - | experiments/f10_formal_20260903_stage19 | PENDING (Priority); target/save/eval 50/50/50; same-node 2x Pro 6000; retention 1/1; no successor |
 | F11 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | Turn-Discount |
 | F12 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | LATA |
 | F13 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | PRM-Lite |

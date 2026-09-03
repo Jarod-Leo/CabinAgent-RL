@@ -152,10 +152,10 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 pilot 与 step-6 resume 均 PASS，正式 F10 已解锁 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，正式 F10 step-50 Job `136868` 排队 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；corrected-F01 初始化的 5-step F10 pilot 与独立 step-6 resume 均已 PASS，正式 fallback F10 已解锁并将从同一冻结父模型新建 fresh RL LoRA。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot 与独立 resume 均已 PASS。正式 fallback F10 已从同一冻结父模型新建 fresh RL LoRA，首个 step-50 segment 为 Job `136868`。
 
 ## 9. 实验记录契约
 
@@ -232,3 +232,4 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - Pilot 只允许调整不改变实验语义的系统吞吐参数；group size、每步 task 数、有效 batch、sampling、长度/轮数、reward/advantage、LoRA、优化器/LR、数据和 simulator 全部冻结。初始目标保留约 10%-15% 动态显存余量，根据 telemetry 在 pilot/resume 边界人工调整，正式分支使用统一冻结设置。
 - F10 pilot 与 step-6 resume 已通过，fallback GRPO 的训练/保存/恢复基础设施闭环成立；正式 F10 已解锁，但 F11-F14 不自动串联。若正式 F10 持续缺少有效 outcome advantage，再按既定分支讨论独立 F13 PRM-Lite 诊断；只有 F13 仍无有效梯度时才讨论模型迁移。
 - 正式 F10 保持 250-step 总目标与 `50/100/150/200/250` 保存/评测点，但按这些边界拆为独立可恢复 Slurm segment；每段验收后才提交下一段。该调度方式连续恢复 model/optimizer/extra，不改变科学设置，并配合 SSD 仅保留最新 1 个完整 checkpoint。
+- 正式 F10 run `f10_formal_20260903_stage19` 的首个 segment 已提交为 Job `136868`，当前 `PENDING (Priority)`；执行代码固定为 Git `9096f74`，target/save/eval `50/50/50`，无 successor。Pilot checkpoint 已删除，提交前 SSD 使用为 `85.8/150 GB`。

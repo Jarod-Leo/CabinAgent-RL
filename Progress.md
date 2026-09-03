@@ -609,3 +609,10 @@
 - 正式 F10 总目标仍为 250 steps，但按 `50/100/150/200/250` 评测点拆为独立可恢复 segment；每段完成、记录、归档后才人工提交下一段，优化器/model/extra 状态连续且无自动 successor。
 - 新增 formal F10 submitter：start 只允许 fresh run 到 step 50，resume 只允许后续四个冻结边界；保存/评测 frequency `50/50`、checkpoint retention `1/1`，其余模型、数据、4x4 rollout、sampling、reward/advantage、LoRA、LR、packed/chunked 路径、offload、memory caps 与双卡拓扑继承已通过的 pilot。
 - 下一步先完成本地测试与代码推送，再同步集群；校验删除 pilot checkpoint 后实时检查集群和 SSD，最后仅提交正式 F10 的 step-50 segment。
+
+### Stage 19: Formal F10 Step-50 Submitted
+
+- Git `9096f74` 已推送并同步集群；远端 Bash、36 tests、compileall、Hydra rendering 与 Slurm test-only 全部通过，正式 override 为 target/save/eval `50/50/50`、retention `1/1`、caps `0.86/0.60`。
+- 已在个人队列为空时删除完成恢复验证使命的 pilot `global_step_5` 和 stale marker；`storagemgr` 显示 SSD 从 `117.2` 降至 `85.8/150 GB`，当前完整 GRPO checkpoint 为 0。
+- 新 run `f10_formal_20260903_stage19` / Job `136868` 于 2026-09-03 05:11:13 UTC 提交，当前 `PENDING (Priority)`；请求同节点 2x Pro 6000、2 tasks、8 CPU、180 GiB、12 小时，无 dependency/successor。
+- Run 从 validated corrected-F01 merged parent 初始化 fresh rank-32 LoRA，不继承 pilot checkpoint。排队/运行期间冻结执行代码；50/50 完成并记录前不提交下一 segment 或其他消融。
