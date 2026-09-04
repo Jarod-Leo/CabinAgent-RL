@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 pilot、step-6 resume 与正式 step-50 segment 均已 PASS；Job `137588` 正在从唯一的 `global_step_50` checkpoint 恢复训练到 step 100。
+进行中：F10 pilot、step-6 resume、正式 step-50 与 step-100 均已 PASS（累计 38/100 有效 outcome-gradient step）。四项冷数据 HDD 精确归档与 7B/72B 直接加载 smoke 已验收，SSD 源经用户确认删除；F10 已从 `global_step_100` 提交单次连续运行到 step 250（Job `138821`，当前 PENDING）。
 
 ## 目标
 
@@ -727,7 +727,82 @@
 
 - 运行期间冻结 Git `400794b` 对应执行脚本和所有训练设置，监测 checkpoint load、step 51--100 reward/advantage/gradient、双卡 telemetry、step-100 validation 与保存峰值。
 - PASS 标准为从 step 50 加载 model/optimizer/extra，完成 100/100，无 NaN/OOM/schema error，成功写出 `global_step_100` 后自动删除 `global_step_50`，全项目仍仅 1 个完整 checkpoint。完成并记录前不提交 step 150 或 F11-F14。
+- 训练与 checkpoint 写入条件已通过，但旧 checkpoint 自动删除条件未通过；本 attempt 记为“训练完成、存储后置条件待修复”，successor 继续阻塞。
+
+### Formal F10 step-100 resume attempt 2 completion / Slurm 137588
+
+#### 实验设置
+
+- 同一 run 从 `global_step_50` 恢复到 total step 100；save/eval=`50/50`、actor/critic retention=`1/1`。模型、数据、seed、4x4 rollout、sampling、outcome GRPO、rank/alpha `32/32` LoRA、LR、长度、simulator、packed/chunked 路径、offload 和 caps `0.86/0.60` 全部继承 step-50 配置。
+- Slurm 实际资源为同一物理节点 2x Pro 6000、2 tasks、8 CPU、180 GiB；原始日志和 checkpoint 保留在受控服务器，公开仓库只保存脱敏聚合结果。
+
+#### 执行结果
+
+- Job `137588` 于 2026-09-03 14:05:38 UTC 以 `COMPLETED/0:0` 结束，elapsed `02:15:49`；manifest 为 completed。日志证明 model/optimizer/extra 从 step 50 加载并完成 100/100。
+- Step 51--100 有 `17/50` 个非零 group advantage 且有限非零 gradient 的有效 outcome-gradient step，`33/50` 个同组全零 advantage step；step 1--100 累计为 `38/100` 有效、`62/100` 全零。新增 50 步的有效 grad norm 范围/均值为 `0.010732--0.135913/0.045689`。
+- 新增 50 步报告的 batch reward mean 均值为 `0.111667`；rollout/actor correlation 均值 `0.999066`，rollout-correction KL 均值 `0.000764`，clip fraction 全为 0。无 NaN、OOM、reward-schema error 或 aborted trajectory。
+- 新增 50 步 mean/median step time 为 `154.06/150.95s`，平均吞吐 `1394.67 token/s`。Simulator/trainer telemetry 峰值为 `87,575/95,054 MiB`（`89.47%/97.11%`），trainer 已超过目标安全占用，不再提高显存参数。
+- Final CAR dev mean@1 为 `0.230769`；与本次 resume initial 相同且低于 step-50 run 的随机评测值 `0.269231`，不能宣称性能提升。100% 后再次出现相同 DataLoader shutdown warning，但发生在 step/checkpoint/final validation/manifest 全部完成后，仍判为非致命。
+- `global_step_100` 与 `global_step_50` 均为 11 文件、各 `31,443,788,637` bytes；latest marker 为 100。SSD 达 `148.8/150 GB`，所以“只保留最新 1 个”的存储后置条件失败。
+
+#### 改进原因
+
+- 安装的 veRL checkpoint manager 只在当前进程的 `previous_saved_paths` 内登记本进程保存的路径；独立 resume 进程加载 step 50 时没有把该路径登记到列表。step 100 保存后列表只含新路径，`max_actor_ckpt_to_keep=1` 因而不会删除 step 50。
+- 该缺陷不影响 step-100 checkpoint 内容、optimizer 连续性或训练指标，但若直接继续一次性运行到 step 250，会在 SSD 只剩约 1.2 GB 时再次触发双 checkpoint 峰值并可能写盘失败。
+
+#### 改进措施
+
+- 已创建 250 GB HDD 项目 `/projects/cabinagentrlarchive`；先通过 CPU Slurm 将当前 checkpoint 选择规则下更优的 step-50 基线候选复制到 HDD，严格验证 exact file set/size/SHA-256。删除 SSD step 50 前仍需按已约定边界给用户精确清单确认。
+- 在项目代码中实现跨进程可见的 checkpoint inventory/pruning：新 checkpoint 成功且 marker/文件 schema 通过后，才删除 SSD 的更旧 global-step 目录；任何失败都保留旧恢复点。加入全项目最多 3 个完整 checkpoint 与 HDD `180 GB` 软上限检查。
+- 完成无 GPU 回归、远端 dry-run 和 storage smoke 后，从 step 100 用一个最长 24 小时的 Slurm 作业连续到 step 250；50/150/200/250 仍评测与保存，但不人工分段。基础设施故障最多自动恢复两次，科学异常立即停止，F11--F14 不自动串联。
 
 ## 结果记录要求
 
 每个 run 单独保存 manifest、冻结配置、trajectory、训练指标、每个评测点的 CAR dev/BFCL 结果和失败样例；完整可恢复 checkpoint 在 SSD 仅保留最新 1 个，失败/被轮换 checkpoint 的小型元数据与结论继续归档，不删除 attempt 历史。
+
+### F10 continuous step-101--250 and F11--F14 tooling / local validation
+
+#### 实验设置
+
+- 新增统一 fallback GRPO runner/submitter：F10 可从 step 100 恢复，F11--F14 从各自冻结配置新建；单个实验总目标 250，save/eval frequency `50/50`，最长 24 小时。
+- 双 GPU 拓扑仍为单节点 2x Pro 6000、同一 `srun` 的 simulator/trainer 两 task；F10 的 4x4 rollout、seed、LR、fresh rank-32 LoRA、reward/advantage、长度、offload 和 caps `0.86/0.60` 不变。
+- 作业启用 scheduler requeue，应用级 restart count 最多 2，并为每次 restart 使用独立完成 sentinel；任何科学异常或 checkpoint postcondition 失败返回失败，不自动提交下一个消融。
+
+#### 执行结果
+
+- 新增跨进程 checkpoint inventory/prune，在 latest marker 和可恢复 schema 验证后仅清理显式旧 step；成功训练要求最终只留下目标 step。
+- F11--F14 配置、HDD model-path override、连续 launcher 和 storage policy 的本地回归全部通过：40 tests、compileall、22 YAML、diff check。尚未提交新的 GPU 训练 Job。
+
+#### 改进原因
+
+- veRL 内存态 retention 无法识别独立 resume 进程加载的旧 checkpoint，导致 step 50 和 100 同时占满 SSD；继续使用分段 Job 会重复该缺陷且增加人工管理成本。
+- 用户已确认同一实验应一次连续完成，而实验之间保留人工 gate；基础设施失败可有限恢复，科学失败必须停止。
+
+#### 改进措施
+
+- 先完成 HDD copy-only 归档和直接加载 compute-node smoke，再在用户确认精确删除目标后释放 SSD step 50/模型源。
+- 远端 Bash、unit、compile、Hydra 和 Slurm test-only 全通过后，才允许从现有 step 100 提交单次连续到 step 250 的 F10；F11--F14 继续等待 F10 结果与人工决定。
+
+### F10 continuous step-101--250 submission / Slurm 138821
+
+#### 实验设置
+
+- 同一 run `experiments/f10_formal_20260903_stage19` 从 `global_step_100` 以单个 Slurm 作业连续恢复到 total step 250；配置 `configs/train/fallback_ablations/vanilla.yaml`，提交入口 `scripts/submit_fallback_ablation.sh f10 resume f10_formal_20260903_stage19`。
+- 模型加载全部走已验证 HDD 路径：policy 父模型 `/projects/cabinagentrlarchive/CabinAgent-RL/models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901`，simulator `/projects/cabinagentrlarchive/CabinAgent-RL/models/Qwen/Qwen2.5-72B-Instruct-AWQ`；数据、reward/advantage、4x4 rollout、seed、LR、LoRA、长度、packed/chunked 路径、offload 与 caps `0.86/0.60` 全部继承 step-100 冻结设置。
+- Slurm：`--nodes=1 --gres=gpu:pro6000:2 -C highmem --requeue --time=24:00:00`，单 `srun` 双 task；`MAX_TRAINING_STEPS=250`、save/eval `50/50`、retention `1/1`、`MAX_INFRA_RESTARTS=2`；restart 专属 completion sentinel；训练成功后强制 `checkpoint_policy.py prune --expected-step 250 --apply`。
+
+#### 执行结果
+
+- 上一阶段只读验收全部通过：用户队列为空；`138014/138060/138064` 全部 `COMPLETED/0:0`；归档报告 `status=verified`、`source_deleted=false`、133 files/`103,536,774,364` bytes；四项 SSD 源与 HDD 副本逐项 du 字节完全一致；step-100 checkpoint 完好且 manifest 为 completed；远端 41 unit tests `OK`；本地与远端 6 个关键执行文件 SHA-256 一致。
+- 用户确认精确清单后删除四项 SSD 源：`checkpoints/global_step_50`、`models/Qwen/Qwen2.5-72B-Instruct-AWQ`、`models/Qwen/Qwen2.5-7B-Instruct`、`models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901`。复核 `checkpoints/` 仅剩 `global_step_100` + latest marker，`models/Qwen`、`models/derived` 已清空；SSD 按删除字节数核算由约 `148.8` 降至约 `52.4 GiB`。
+- `checkpoint_policy.py audit` PASS：唯一 checkpoint `global_step_100` 11 文件、schema 完整、marker=100。Job `138821`（`car-f10-full`）已提交，manifest 原子更新为 submitted，`submissions.tsv` 追加 `continuous-resume` 记录；集群 Pro 6000 满载，当前 `PENDING (Priority)`。
+
+#### 改进原因
+
+- veRL retention=1 无法识别跨进程加载的旧 checkpoint，step-50/100 双 checkpoint 曾占满 SSD（`148.8/150 GB`）；不释放空间则连续运行的保存峰值（瞬时两份约 `62.9 GB`）必然写盘失败。
+- HDD 归档与双模型直接加载 smoke 已提供等价不可变数据源，删除 SSD 源不改变任何科学设置，却恢复了连续训练的存储前置条件。
+
+#### 改进措施
+
+- PASS 标准：从 step 100 恢复 model/optimizer/extra 并完成 250/250，无 NaN/OOM/reward-schema error；50/150/200/250 评测与保存；`prune --expected-step 250` 后置条件通过且全项目仅保留 `global_step_250`；基础设施 requeue 不超过 2 次，科学异常立即失败返回。
+- 排队/运行期间冻结远端执行代码，不提交 F11-F14 或其他消融；完成或失败后按契约追加记录，再由人工门禁决定下一动作。

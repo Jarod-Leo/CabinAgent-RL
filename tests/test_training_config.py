@@ -11,6 +11,7 @@ class TrainingConfigTests(unittest.TestCase):
             "scripts/slurm_dual_pro6000.sbatch",
             "scripts/slurm_same_node_dual_gpu_smoke.sbatch",
             "scripts/slurm_f10_pilot.sbatch",
+            "scripts/slurm_fallback_grpo.sbatch",
         ):
             text = (ROOT / relative).read_text(encoding="utf-8")
             self.assertIn("#SBATCH --nodes=1", text)
@@ -141,17 +142,23 @@ class TrainingConfigTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertNotIn("NEXT_TRAINING_STAGE", formal_submitter)
-        self.assertIn("50|100|150|200|250", formal_submitter)
-        self.assertIn("SAVE_FREQ=50", formal_submitter)
-        self.assertIn("EVAL_FREQ=50", formal_submitter)
-        self.assertIn("MAX_ACTOR_CKPT_TO_KEEP:-1", formal_submitter)
-        self.assertIn("MAX_CRITIC_CKPT_TO_KEEP:-1", formal_submitter)
-        self.assertIn("SIMULATOR_GPU_MEMORY_UTILIZATION:-0.86", formal_submitter)
-        self.assertIn("ROLLOUT_GPU_MEMORY_UTILIZATION:-0.60", formal_submitter)
-        self.assertIn("scripts/slurm_f10_pilot.sbatch", formal_submitter)
-        self.assertIn('PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"', formal_submitter)
-        self.assertIn('"$PYTHON_BIN" -B scripts/init_experiment.py', formal_submitter)
-        self.assertIn('"$PYTHON_BIN" -B scripts/update_experiment_manifest.py', formal_submitter)
+        self.assertIn('target_steps="${3:-250}"', formal_submitter)
+        self.assertIn("scripts/submit_fallback_ablation.sh", formal_submitter)
+
+        continuous_submitter = (ROOT / "scripts/submit_fallback_ablation.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("target_steps=250", continuous_submitter)
+        self.assertIn("SAVE_FREQ=50", continuous_submitter)
+        self.assertIn("EVAL_FREQ=50", continuous_submitter)
+        self.assertIn("MAX_ACTOR_CKPT_TO_KEEP=1", continuous_submitter)
+        self.assertIn("MAX_CRITIC_CKPT_TO_KEEP=1", continuous_submitter)
+        self.assertIn("SIMULATOR_GPU_MEMORY_UTILIZATION:-0.86", continuous_submitter)
+        self.assertIn("ROLLOUT_GPU_MEMORY_UTILIZATION:-0.60", continuous_submitter)
+        self.assertIn("scripts/slurm_fallback_grpo.sbatch", continuous_submitter)
+        self.assertIn('PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"', continuous_submitter)
+        self.assertIn('"$PYTHON_BIN" -B scripts/init_experiment.py', continuous_submitter)
+        self.assertIn('"$PYTHON_BIN" -B scripts/update_experiment_manifest.py', continuous_submitter)
 
         f10_slurm = (ROOT / "scripts/slurm_f10_pilot.sbatch").read_text(
             encoding="utf-8"
@@ -166,6 +173,15 @@ class TrainingConfigTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("FSDPEngineWithLMHead.prepare_model_outputs", packed_smoke)
+
+    def test_simulator_smoke_accepts_an_explicit_model_path(self) -> None:
+        script = (ROOT / "scripts/slurm_simulator_smoke.sbatch").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            'SIMULATOR_MODEL_PATH="${SIMULATOR_MODEL_PATH:-$PROJECT_ROOT/models/',
+            script,
+        )
 
     def test_ray_uses_short_job_scoped_socket_path(self) -> None:
         runtime_env = (ROOT / "scripts/cluster_runtime_env.sh").read_text(encoding="utf-8")

@@ -640,3 +640,41 @@
 - Allocation 显示物理 GPU indices `0,5` 和两个不同 GPU UUID；trainer 已从 `global_step_50` 恢复并完成 step 51。该步 reward mean `0.0625`、advantage range `[-0.5,1.5]`、grad norm `0.0300013`、KL loss `0.0006214`、clip fraction 0，无 OOM/NaN/schema error。
 - 当前进度 `51/100`。训练设置、caps `0.86/0.60`、retention `1/1` 与 step-50 完全冻结，无 successor。
 - 下一验收是确认从 `global_step_50` 恢复并完成 step 51--100；保存成功后必须只保留 `global_step_100`。完成并记录前不提交 step 150 或 F11-F14。
+
+### 2026-09-04 Stage 19: Formal F10 Step-100 Training Complete, Storage Remediation Required
+
+- Slurm `137588` completed with exit `0:0` after `2:15:49`; the trainer restored model/optimizer/extra state from step 50 and reached 100/100 without NaN, OOM, reward-schema error or aborted trajectories.
+- Steps 51--100 contained `17/50` effective outcome-gradient steps and `33/50` zero-advantage steps; cumulative steps 1--100 contain `38/100` effective outcome-gradient steps. The mean of the 50 reported batch reward means was `0.111667`, mean rollout/actor correlation `0.999066`, mean rollout-correction KL `0.000764`, and clip fraction remained zero.
+- Mean/median step time improved to `154.06/150.95s`; mean throughput was `1394.67 token/s`. Simulator/trainer peak memory was `87,575/95,054 MiB` of `97,887 MiB` (`89.47%/97.11%`), so no further VRAM-filling adjustment is safe.
+- Final CAR dev mean@1 was `0.230769`; this does not establish performance improvement. The previously observed post-completion DataLoader shutdown warning recurred after all required artifacts were written and remains non-fatal.
+- Both `global_step_50` and `global_step_100` remain, each exactly `31,443,788,637` bytes with the same 11-file schema. Live storage reached `148.8/150 GB`. Installed veRL source confirms retention tracks only checkpoints saved in the current process and does not register a checkpoint loaded by a new resume process, so retention=`1` could not see step 50.
+- Provisioned the approved 250 GB HDD project at `/projects/cabinagentrlarchive`; the storage manager rejected the requested hyphenated name as unsafe, so the equivalent alphanumeric permanent name was used. No SSD source has been deleted.
+- Successor training remains blocked until the selected step-50 baseline checkpoint is copied to HDD by Slurm, verified by exact file set/size/SHA-256, the user confirms deletion of the exact SSD source, and project-level checkpoint pruning is regression-tested.
+
+### 2026-09-04 Stage 19: Continuous-Run And Storage Tooling Validated Locally
+
+- Added generic F10--F14 launchers for one continuous 250-step Slurm allocation, 50-step save/eval boundaries, same-node dual-Pro6000 topology, restart-count guard of two infrastructure retries, and no automatic successor experiment.
+- Added cross-process checkpoint audit/pruning that validates the latest marker and resumable five-file schema before removing an explicitly older global-step directory. Successful continuous jobs require the final keep-step postcondition.
+- Added a CPU-Slurm HDD archive path using `.incoming`, exact size/SHA-256 inventories, atomic cutover, unsafe/overlapping-path and parent/internal-symlink rejection, a 180 GB soft cap, and no SSD source deletion.
+- Added F11--F14 fallback configs and model-path overrides so immutable parents can load directly from HDD after a compute-node smoke. Existing F10 scientific settings and VRAM caps remain frozen.
+- Requeue attempts use restart-specific simulator/trainer completion sentinels, so a stale sentinel from an interrupted allocation cannot terminate the replacement simulator. Local validation passed: 40 unit tests, Python compileall, 22 YAML files, and `git diff --check`.
+- Next is remote source/storage audit, code-only sync, remote dry-run, and a verified copy-only archive attempt; no training successor has been submitted. The cluster SSH path is currently timing out before banner exchange, so no remote state was mutated during this preparation.
+
+### 2026-09-04 Stage 19: HDD Copy-Only Archive Passed
+
+- VPN/SSH recovered. Live checks confirmed an empty user queue, SSD `148.8/150 GB`, HDD `0/250 GB`, and four source trees totaling `103,536,774,364` bytes with no symlinks.
+- The synchronized bundle hash matched locally and remotely; remote 40 tests, compileall, Bash syntax, Hydra dry-run, checkpoint audit, and both Slurm test-only paths passed.
+- CPU archive Job `138014` completed in `25m24s` with exit `0:0`. The report verified 133 files and `103,536,774,364` bytes by exact path/size/SHA-256, removed the temporary incoming batch, and confirms `source_deleted=false`; all four SSD sources and HDD targets coexist.
+- Simulator smoke now accepts an explicit immutable model path instead of forcing the SSD default, with a static regression test; local suite is now 41 tests. Next is the 7B/72B HDD load smoke without changing serving semantics.
+- HDD corrected-F01 parent Job `138060` passed in `1m46s` with exit `0:0`: 10-file/15.24 GB manifest hash, BF16 load of 7.616B parameters, tokenizer, and one-token generation all succeeded directly from HDD. This is well below the ~20-minute threshold; 72B smoke is next and no SSD source has been deleted.
+- HDD 72B-AWQ simulator Job `138064` passed in `4m37s` with exit `0:0`. Eleven shards loaded in `122.16s`, full model load took `128.29s`, and unchanged AWQ-Marlin/FlashAttention2 health plus three request classes succeeded.
+- Both immutable models now pass direct HDD compute-node loading well below the ~20-minute threshold. No SSD source has been deleted and no F10 successor is active; the exact four-item SSD deletion list now requires explicit user confirmation.
+
+### 2026-09-04 Stage 19: HDD Acceptance Passed And F10 Continuous Run Submitted
+
+- 通过免密 SSH 重新建立集群会话后完成上一阶段只读验收：用户队列为空；归档/加载三作业 `138014/138060/138064` 全部 `COMPLETED/0:0`；`archive-138014.json` 为 `status=verified`、`source_deleted=false`、133 files/`103,536,774,364` bytes。
+- 四项 SSD 源与 HDD 副本逐项 `du -sb` 字节完全一致（step-50 checkpoint 31,443,788,637 B；72B-AWQ 41,607,445,835 B；7B base 15,242,811,314 B；F01-merged 15,242,728,578 B）；step-100 checkpoint 完好且 manifest 为 completed；`138060/138064` 报告状态均为 `PASS`。
+- 远端与本地 6 个关键执行文件（连续 launcher/sbatch/submitter/checkpoint_policy/launch_verl/vanilla.yaml）SHA-256 全部一致，远端 41 unit tests `OK`；确认 `submit_fallback_ablation.sh` 默认的 policy/simulator 路径均指向已验证 HDD，且 sbatch 具备 `--requeue`、restart sentinel 与 `prune --expected-step 250` 后置条件。
+- 用户确认精确清单后仅删除四个已归档 SSD 目录（`global_step_50`、7B、72B-AWQ、F01-merged，合计 103,536,774,364 bytes）；复核 `checkpoints/` 仅剩 `global_step_100` + latest marker，模型目录清空，SSD 按字节数核算由约 `148.8` 降至约 `52.4 GiB`。
+- `checkpoint_policy.py audit` PASS（唯一 checkpoint step 100、11 文件 schema 完整、marker=100）后，以 `submit_fallback_ablation.sh f10 resume f10_formal_20260903_stage19` 提交连续作业 Job `138821`（`car-f10-full`，24h、同节点 2x Pro 6000、requeue≤2），manifest 已更新为 submitted；集群 Pro 6000 满载，当前 `PENDING (Priority)`。
+- 遗留问题：Job `138821` 需要完成 step 101--250 并通过 `prune --expected-step 250` 后置条件（最终仅保留 `global_step_250`）才算 PASS；F11-F14 仍等待 F10 结果与人工门禁。

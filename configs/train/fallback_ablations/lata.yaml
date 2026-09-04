@@ -1,0 +1,9 @@
+experiment_id: F12
+name: fallback_f01_lata
+parent_config: configs/train/grpo_common.yaml
+policy_model: models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901
+initialization: corrected_f01_merged_parent_plus_fresh_rank32_lora
+advantage_estimator: grpo_lata
+reward_mode: outcome
+process_reward_weight: 0.0
+turn_discount_alpha: 1.05

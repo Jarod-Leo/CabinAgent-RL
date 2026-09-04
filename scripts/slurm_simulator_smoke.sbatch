@@ -22,7 +22,7 @@ module load CUDA/12.8.0
 source activate "$GPU_ENV"
 cd "$PROJECT_ROOT"
 source scripts/cluster_runtime_env.sh
-export SIMULATOR_MODEL_PATH="$PROJECT_ROOT/models/Qwen/Qwen2.5-72B-Instruct-AWQ"
+export SIMULATOR_MODEL_PATH="${SIMULATOR_MODEL_PATH:-$PROJECT_ROOT/models/Qwen/Qwen2.5-72B-Instruct-AWQ}"
 export SIMULATOR_PORT="$PORT"
 
 cleanup() {

@@ -1,7 +1,7 @@
 # Project.md: CabinAgent-RL
 
-**Version**: v0.6 fallback-GRPO formal execution
-**Updated**: 2026-09-03
+**Version**: v0.7 continuous-run and tiered-storage execution
+**Updated**: 2026-09-04
 **Goal**: 基于 CAR-bench 与 BFCL，比较 Direct-Instruct 与 Minimal-SFT fallback 初始化，并构建可复现的智能座舱多轮工具 Agent 训练、消融、评测与部署闭环。
 
 ## 1. 已确认边界
@@ -12,7 +12,7 @@
 - Project-specific SFT: 不再是前置阶段，仅在真实 CAR rollout gate 失败时作为最小兜底，并建立独立实验族。
 - Reward: CAR 最终状态、工具执行、自动规则与 PRM-Lite；训练 reward 不依赖 LLM policy evaluator。
 - Compute: 一个 Slurm 作业在同一物理节点原子申请 2 块 Pro 6000；simulator 与 policy/trainer 各独占 1 GPU，禁止跨节点拼卡。
-- Storage root: `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL`。
+- Active storage root: project SSD `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL`；cold archive root: project HDD `/projects/cabinagentrlarchive`。不可变模型可在计算节点通过显式 HDD 路径直接加载；checkpoint、环境、缓存、训练数据和实时日志保留在 SSD。
 - 正式消融完整保留五组：Vanilla、Turn-Discount、LATA、PRM-Lite、PRM-Lite + LATA。
 
 ## 2. 主流程
@@ -152,10 +152,10 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，正式 F10 step-100 resume Job `137588` 运行中 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 连续 step 101--250 已提交（Job `138821`），等待运行与 prune 后置条件验收 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot、独立 resume 与正式 step-50 segment 均已 PASS。正式 F10 正由 Job `137588` 从唯一的 `global_step_50` checkpoint 连续恢复到 step 100。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot、独立 resume、正式 step 50 和 step 100 训练均已完成。step 51--100 有 `17/50` 个有效 outcome-gradient step，累计 step 1--100 为 `38/100`。跨进程 checkpoint audit/prune、具备路径/软链接边界校验的 copy-only HDD 归档器，以及 restart-safe 的 F10--F14 连续 250-step launcher 已通过本地与远端回归；四项冷数据 `103,536,774,364` bytes 已完成 HDD 精确哈希归档，7B 与 72B-AWQ 直接 HDD 加载均通过，SSD 源已经用户确认删除（SSD 降至约 `52.4 GiB`）。F10 已从 `global_step_100` 提交单次连续运行到 step 250（Job `138821`），成功标准含 `prune --expected-step 250` 后置条件。
 
 ## 9. 实验记录契约
 
@@ -235,3 +235,6 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 - 正式 F10 run `f10_formal_20260903_stage19` 的首个 segment Job `136868` 已 `COMPLETED/0:0`：50/50 steps，`21/50` 步具有有效 outcome-gradient，唯一 `global_step_50` checkpoint 已保存；initial/final CAR dev mean@1 均为 `0.269231`，尚不支持性能提升声明。当前证据支持按冻结路线恢复到 step 100，而不是提前切换 F13 或模型。
 - Step-100 首次提交 Job `137581` 在节点分配前取消：新 SSH shell 无裸 `python`，导致 `sbatch` 后的 manifest update 失败；0 GPU、0 step，checkpoint 未变。Formal submitter 与 batch lifecycle update 改为显式 `$GPU_ENV/bin/python`，回归通过后用新 Job ID 重提，科学路线不变。
 - 修复版 step-100 resume Job `137588` 已在 `gpu-pro6000-7` 启动，manifest running，同节点两块 Pro 6000 绑定成立；当前等待完成 checkpoint load 与 step 51--100，期间不提交 step 150 或其他消融。
+- Step-100 resume `137588` 已 `COMPLETED/0:0`：从 step 50 完整恢复并完成 100/100；step 51--100 有 `17/50` 个有效 outcome-gradient step，final CAR dev mean@1 `0.230769`，无 NaN/OOM/schema error。Trainer telemetry 峰值 `95,054/97,887 MiB`（97.11%），不得继续提高显存占用参数。
+- veRL retention=`1` 在新 Slurm 恢复进程中未登记已加载的 step-50 路径，导致 step 50/100 两份各 `31,443,788,637` bytes 的完整 checkpoint 同时存在，SSD 达 `148.8/150 GB`。训练结果有效，但存储后置条件未通过；在 HDD 校验归档、项目级安全清理和恢复验证完成前不提交 successor。
+- 用户已确认新的执行契约：HDD 配额 250 GB、180 GB 软上限、全项目最多 3 个完整 checkpoint；当前实验保留最新恢复点，F10 基线与其余方法各保留一个最佳完整 checkpoint，其他 run 永久保存轻量 adapter/配置/指标。每项 F10--F14 内部一次连续跑到 250 step，50-step checkpoint/eval 仅作内部恢复点，24 小时时限，基础设施故障最多自动恢复两次，实验之间人工门禁。

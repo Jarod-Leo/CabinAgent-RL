@@ -50,7 +50,12 @@ def build_overrides(
     train_data = ROOT / str(common["train_data"])
     val_data = ROOT / str(common["val_data"])
     agent_loop = ROOT / str(common["agent_loop_config"])
-    configured_model = Path(str(experiment.get("policy_model", common["policy_model"])))
+    configured_model = Path(
+        os.environ.get(
+            "POLICY_MODEL_PATH",
+            str(experiment.get("policy_model", common["policy_model"])),
+        )
+    )
     policy_model = configured_model if configured_model.is_absolute() else ROOT / configured_model
     max_steps = int(os.environ.get("MAX_TRAINING_STEPS", common["max_steps"]))
     save_freq = int(os.environ.get("SAVE_FREQ", common["save_freq"]))
@@ -72,6 +77,8 @@ def build_overrides(
 
     overrides = [
         f"algorithm.adv_estimator={experiment['advantage_estimator']}",
+        "+algorithm.turn_discount.alpha="
+        + str(experiment.get("turn_discount_alpha", 1.0)),
         f"data.train_files={quote_list(train_data)}",
         f"data.val_files={quote_list(val_data)}",
         f"data.train_batch_size={common['train_batch_size']}",
