@@ -706,3 +706,11 @@
 - 启用 veRL 原生 LoRA-only 可恢复 checkpoint：模型 shard 只保存 LoRA，同时继续保存 optimizer 与 RNG/LR scheduler；上游 retention 暂停，由项目选择器按最佳 step 管理。新增 `audit-best` 最终后置条件。
 - 新增 F10 step-50 adapter 导出/验证 Slurm 入口：使用 veRL FSDP merger 只导出 PEFT LoRA，校验 rank/alpha、safetensors keys，并以 HDD corrected-F01 parent 完成 one-token GPU generation；目标已存在时拒绝覆盖。
 - 本地 51/51 unit tests、Python compilation 与 diff check 通过；未提交或修改任何 Slurm job。下一步同步远端、检查 Hydra/Ray/veRL 实际路径，并先提交单卡 F10 adapter export/validation。
+
+### 2026-09-05 Stage 20: F10 Best Adapter Export Submitted
+
+- 实时 pre-flight：账户/QoS=`msc/msc`，用户队列原为空；SSD `45.4/150.0 GB`、HDD `103.5/250.0 GB`。HDD F10 step-50 checkpoint（约 30 GB）与 corrected-F01 merged parent（约 15 GB）存在，目标 adapter 路径不存在；当前 Pro 6000 满载。
+- commit `41e9dcd` 已推送 GitHub 并同步执行文件到远端。远端 Bash、compileall、51/51 tests、Ray actor class import、W&B credential verify、Hydra resolved config 与 F10/F11 Slurm test-only 均 PASS；F11 解析为 Turn-Discount `alpha=1.05`、250 steps、50-step dev、sync、LoRA-only、strict-best metric。
+- 单卡 highmem Pro 6000 adapter export/validation Job `140039` 已提交，当前 `PENDING (Priority)`；0 GPU time、0 文件变更。完成并记录其结果前不提交 F11。
+- Job `140039` 随后在 `gpu-pro6000-3` 运行 `00:03:30` 并 `COMPLETED/0:0`。导出 rank/alpha `32/32`、392 tensors 的 F10 step-50 actor LoRA；adapter 本体 `161,533,560` bytes，目录合计 `161,535,915` bytes，逐文件 SHA-256 与 parent+adapter CUDA one-token generation 均 PASS（峰值 `15,786,684,416` bytes）。
+- 两个完整 F10 checkpoint 仍原样保留：HDD step 50 与 SSD step 250 均为 11 files / `31,443,788,637` bytes。下一步按契约给出 exact paths 并等待用户单独确认删除；未经确认不清理、不提交 F11。

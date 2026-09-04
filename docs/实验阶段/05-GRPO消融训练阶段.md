@@ -895,3 +895,27 @@
 
 - 保持训练循环本体、optimizer、rollout、reward 与 advantage 不变，只在 Ray task runner 内包装 save/validate；仅新最佳写盘，写后严格验证并清理旧最佳。
 - 远端必须通过代码 hash、unit/compile、Bash、Hydra resolved config、Ray task-runner import、Slurm test-only 和 W&B 状态检查；随后先提交单卡 F10 adapter export/parent+adapter generation validation。该验证完成并记录前不提交 F11。
+
+### F10 best adapter export / Job 140039
+
+#### 实验设置
+
+- commit `41e9dcd`；输入为 HDD `f10_formal_20260903_stage19/checkpoints/global_step_50`，parent 为已校验 HDD corrected-F01 merged snapshot，输出目标为 `adapters/f10_vanilla_best_step_50`。
+- 单节点单 task、1x highmem Pro 6000、2 小时；选择 step 50 / CAR dev mean@1 `0.269231`，导出 rank/alpha `32/32` actor LoRA，并要求 parent+adapter CUDA one-token generation。
+
+#### 执行结果
+
+- Job `140039` 已提交，当前 `PENDING (Priority)`；0 GPU time、0 输出文件。提交前目标目录不存在。
+- 实时配额 SSD `45.4/150.0 GB`、HDD `103.5/250.0 GB`；远端 51/51 tests、compileall、Bash、Ray actor import、W&B verify、Hydra resolved config 和 Slurm test-only 全部 PASS。
+- Job 随后在 `gpu-pro6000-3` 运行 `00:03:30` 并 `COMPLETED/0:0`。产物为 rank/alpha `32/32`、392 tensor 的 actor LoRA；adapter model `161,533,560` bytes，含 manifest 的目录合计 `161,535,915` bytes。
+- `adapter_manifest.json` 的逐文件 SHA-256、safetensors LoRA key 检查，以及 corrected-F01 parent + adapter CUDA one-token generation 全部 PASS；峰值 CUDA memory `15,786,684,416` bytes。证据归档于 `reports/cluster/F10-ADAPTER-140039/`。
+
+#### 改进原因
+
+- F10 选模规则将 step 50 判为 earliest tied best，但当前 SSD 只保留分数更低的 step 250；必须先从已验证 HDD step-50 完整恢复点物化轻量、可独立评测的 actor adapter，才能安全讨论完整 checkpoint 删除。
+
+#### 改进措施
+
+- 作业原子写入 adapter 目录，拒绝覆盖，并生成逐文件 SHA-256 manifest；只有 LoRA 结构检查和 parent+adapter GPU generation 均 PASS 才接受。
+- 完成后先追加最终结果；再向用户提供两个完整 checkpoint 的精确路径、文件数和字节数以取得单独删除确认。该 attempt 完成并记录前不提交 F11。
+- 最终验证已通过。HDD `global_step_50` 与 SSD `global_step_250` 当前各 11 files / `31,443,788,637` bytes，仍保持原样；等待用户对这两个 exact targets 的单独删除确认，F11 尚未提交。

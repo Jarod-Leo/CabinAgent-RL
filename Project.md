@@ -154,10 +154,10 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 已闭环；F11 best-checkpoint/LoRA-only tooling 本地验证通过，等待远端 pre-flight |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 最佳 adapter 导出/加载验证 PASS；等待完整 checkpoint 删除确认后提交 F11 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 已完成 250 steps并回填 W&B。按冻结的严格提升/同分留早规则，F10 最佳为 step 50（与 step 150 同为 `0.269231`），而当前 SSD step 250 为 `0.230769`；先从已校验 HDD step-50 副本导出并加载验证 adapter，再单独确认完整 checkpoint 删除。F11 Turn-Discount 已选择，训练内 best-checkpoint 与 LoRA-only 可恢复存储的本地 51 项回归通过，尚未提交 Slurm。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 已完成 250 steps并回填 W&B。按冻结的严格提升/同分留早规则，F10 最佳为 step 50（与 step 150 同为 `0.269231`）；Job `140039` 已将其导出为约 161.5 MB 的 rank-32 adapter，并通过 hash 与 parent+adapter GPU generation。HDD step 50 和 SSD step 250 两个约 31.44 GB 完整 checkpoint 尚未删除，等待单独确认。F11 Turn-Discount 的训练内 best-checkpoint 与 LoRA-only 可恢复链路已通过本地和远端 pre-flight，尚未提交训练 Job。
 
 ## 9. 实验记录契约
 

@@ -41,9 +41,9 @@ Complete the fallback-GRPO ablation sequence reproducibly. The active objective 
 | Step | Status | Acceptance |
 |---|---|---|
 | Freeze selection/storage contract | complete | CAR dev mean@1 at 50-step boundaries; strict improvement only; ties keep earlier; step 0 excluded; completed runs retain validated LoRA adapter rather than full optimizer checkpoint. |
-| Implement best-checkpoint tooling | in_progress | Local implementation and 51 tests PASS; remote Hydra/Ray/veRL integration and LoRA-only save/load smoke remain. |
-| Export F10 selected adapter | pending | Convert archived F10 step 50 with veRL, validate adapter inventory and a parent+adapter generation smoke, then present exact full-checkpoint deletion targets for separate approval. |
-| Remote pre-flight | pending | Current Slurm/QoS/GPU/storage/W&B state checked; code hashes, tests, Bash, Hydra rendering, and Slurm test-only pass. |
+| Implement best-checkpoint tooling | complete | Local and remote 51 tests, compile, Ray actor import, Hydra resolution, and scheduler validation PASS. |
+| Export F10 selected adapter | complete | Job `140039` completed; 161.5 MB rank-32 adapter inventory and parent+adapter CUDA generation PASS. Exact full-checkpoint deletion approval is now pending. |
+| Remote pre-flight | complete | Live Slurm/QoS/GPU/storage/W&B state, tests, Bash, Hydra resolved config, imports, and both Slurm test-only checks pass. |
 | Submit F11 | pending | One 250-step job, same physical node 2x Pro 6000, Turn-Discount alpha 1.05, 50-step dev validation, console+W&B, no F12 successor. |
 | Monitor and close F11 | pending | 250/250 or honest failed attempt; best-step history, gradients, GPU telemetry, adapter export, stage docs, and GitHub sync complete. |
 
