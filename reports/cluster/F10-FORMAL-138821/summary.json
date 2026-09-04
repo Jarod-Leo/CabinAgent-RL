@@ -40,5 +40,6 @@
   "automatic_postcondition": "failed_on_incomplete_step_200_tombstone",
   "manual_remediation": "passed",
   "post_remediation_complete_checkpoints": [250],
+  "wandb_run_url": "https://wandb.ai/carrortsky-nanyang-technological-university-singapore/CabinAgent-RL/runs/2ut4t5d4",
   "claim": "F10 maintained usable outcome-gradient signal but did not improve final CAR dev mean@1 over step 100."
 }

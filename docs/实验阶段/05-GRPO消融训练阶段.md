@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 已完成 250 steps（累计 114/250 有效 outcome-gradient step）。Job `138821` 的训练与 step-250 保存成功，但自动 prune 因旧 step 残留目录失败；经代码修复和用户确认删除后，post-audit 仅剩完整 `global_step_250`。当前等待 W&B 记录契约与 post-F10 人工门禁。
+进行中：F10 已完成 250 steps（累计 114/250 有效 outcome-gradient step），存储后置条件已人工恢复，0--250 数值曲线已回填 W&B。用户已选择 F11 Turn-Discount 为下一实验；提交前等待 best-checkpoint 同分规则冻结。
 
 ## 目标
 
@@ -851,3 +851,24 @@
 
 - 保留 Job `138821` 的 `FAILED/1:0` 事实，同时把手工 remediation 单独记录为 PASS。后续 F11--F14 复用修复后的收尾路径，避免相同 tombstone 再次导致假失败。
 - 下一步先决定 W&B：推荐回填 F10 step 1--250 console metrics，并让后续实验原生实时记录；完成记录契约后再由人工门禁选择下一消融，不自动提交。
+
+### F10 W&B historical backfill / run 2ut4t5d4
+
+#### 实验设置
+
+- W&B project `CabinAgent-RL`，run `F10-Vanilla-seed42`，group `fallback-grpo-qwen2.5-7b`；输入为 Job `136868/137588/138821` 的 trainer console 日志。
+- 只解析并上传逐 step 数值字段和非敏感实验标签；不上传原始对话、tool outputs、模型、checkpoint 或 API key。后续 GRPO 默认使用 console + W&B 双 logger。
+
+#### 执行结果
+
+- 本地 parser/segment merge 2 tests PASS，远端对应 2 tests 与 8 项 training-config tests PASS，真实 dry-run 解析 `251` 个 step（0--250）与 `97` 个数值指标。
+- 在线回填成功，W&B run ID `2ut4t5d4`；history steps 0--250 与 summary 已同步。服务器凭据来自用户级 `~/.netrc`，仓库和日志中没有密钥。
+
+#### 改进原因
+
+- F10 运行时仅启用 console logger，虽保留完整数值曲线，但不便跨实验可视化和对比。后续五组消融需要统一曲线命名、step 轴和在线健康观察。
+
+#### 改进措施
+
+- 增加可复现的 console 历史回填入口；未来 GRPO 使用 `trainer.logger=['console','wandb']`，同时保留本地日志作为独立证据源。
+- 用户已选择 F11 Turn-Discount；每 50 steps 固定 dev 验证，最终仅保留 dev 最优 checkpoint。提交前先冻结并列分数的 tie-break 和对应存储行为。

@@ -7,3 +7,5 @@ Steps 101--250 contained 76/150 effective outcome-gradient steps with mean batch
 The pruning utility was updated to distinguish complete resumable checkpoints from older incomplete tombstones while preserving strict marker, keep-step, path, symlink, and newer-step safety checks. After local and remote regression tests passed, the user approved deletion of step 100, 150, and 200. The post-remediation audit reports one complete checkpoint: step 250, 11 files, `31,443,788,637` bytes, marker 250.
 
 Raw conversations and model weights remain on the controlled server and are not published. `summary.json` contains the public aggregate metrics.
+
+The numeric console history was backfilled to [W&B run F10-Vanilla-seed42](https://wandb.ai/carrortsky-nanyang-technological-university-singapore/CabinAgent-RL/runs/2ut4t5d4): 251 history steps (0--250) and 97 numeric metrics. Raw conversations and checkpoints were not uploaded.

@@ -14,6 +14,7 @@
 - Compute: 一个 Slurm 作业在同一物理节点原子申请 2 块 Pro 6000；simulator 与 policy/trainer 各独占 1 GPU，禁止跨节点拼卡。
 - Active storage root: project SSD `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL`；cold archive root: project HDD `/projects/cabinagentrlarchive`。不可变模型可在计算节点通过显式 HDD 路径直接加载；checkpoint、环境、缓存、训练数据和实时日志保留在 SSD。
 - 正式消融完整保留五组：Vanilla、Turn-Discount、LATA、PRM-Lite、PRM-Lite + LATA。
+- 实验跟踪使用 W&B project `CabinAgent-RL`：只上传训练/评测数值指标与非敏感配置，不上传原始对话、tool outputs、checkpoint 或凭据；F10 console 历史已回填，后续实验使用 console + W&B 实时双写。
 
 ## 2. 主流程
 
@@ -155,7 +156,7 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 已完成 250 steps；Job `138821` 的自动 prune 失败已人工修复，等待 post-F10 人工门禁 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 已完成 250 steps。step 101--250 有 `76/150` 个有效 outcome-gradient step，累计 step 1--250 为 `114/250`；最终 CAR dev mean@1 为 `0.230769`，未建立性能提升结论。Job `138821` 因 veRL 留下的 step-150/200 不完整目录使自动 prune 报错而以 `FAILED/1:0` 结束，但 step-250 checkpoint 完整。清理器现能区分完整 checkpoint 与旧 step 残留目录；经用户确认，step-100/150/200 已删除，post-audit 仅剩 11 文件、`31,443,788,637` bytes 的 `global_step_250`，marker=250。F11--F14 继续等待人工门禁，不自动串联。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 已完成 250 steps。step 101--250 有 `76/150` 个有效 outcome-gradient step，累计 step 1--250 为 `114/250`；最终 CAR dev mean@1 为 `0.230769`，未建立性能提升结论。Job `138821` 因 veRL 留下的 step-150/200 不完整目录使自动 prune 报错而以 `FAILED/1:0` 结束，但 step-250 checkpoint 完整。清理器现能区分完整 checkpoint 与旧 step 残留目录；经用户确认，step-100/150/200 已删除，post-audit 仅剩 11 文件、`31,443,788,637` bytes 的 `global_step_250`，marker=250。F10 的 0--250 数值曲线已回填 W&B，后续 logger 已切换为 console + W&B。F11 Turn-Discount 已获人工选择，但提交前须冻结 best-checkpoint 同分规则。
 
 ## 9. 实验记录契约
 

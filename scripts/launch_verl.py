@@ -75,6 +75,13 @@ def build_overrides(
         formatted = "\n".join(f"- {path}" for path in missing)
         raise FileNotFoundError(f"Formal veRL launch prerequisites are missing:\n{formatted}")
 
+    wandb_enabled = os.environ.get("WANDB_ENABLED", "1").strip().lower() not in {
+        "0",
+        "false",
+        "no",
+        "off",
+    }
+    trainer_loggers = "['console','wandb']" if wandb_enabled else "['console']"
     overrides = [
         f"algorithm.adv_estimator={experiment['advantage_estimator']}",
         "+algorithm.turn_discount.alpha="
@@ -152,7 +159,7 @@ def build_overrides(
         "trainer.project_name=CabinAgent-RL",
         f"trainer.experiment_name={run_id}",
         f"trainer.default_local_dir={run_dir.as_posix()}/checkpoints",
-        "trainer.logger=['console']",
+        f"trainer.logger={trainer_loggers}",
         "trainer.resume_mode=auto",
     ]
     return experiment, overrides

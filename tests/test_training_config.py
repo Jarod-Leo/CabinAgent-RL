@@ -174,6 +174,16 @@ class TrainingConfigTests(unittest.TestCase):
         )
         self.assertIn("FSDPEngineWithLMHead.prepare_model_outputs", packed_smoke)
 
+    def test_future_grpo_runs_enable_console_and_wandb_logging(self) -> None:
+        config = ROOT / "configs" / "train" / "fallback_ablations" / "turn_discount.yaml"
+        _, overrides = build_overrides(
+            config,
+            "test-f11-wandb",
+            ROOT / "experiments" / "test-f11-wandb",
+            validate_paths=False,
+        )
+        self.assertIn("trainer.logger=['console','wandb']", overrides)
+
     def test_simulator_smoke_accepts_an_explicit_model_path(self) -> None:
         script = (ROOT / "scripts/slurm_simulator_smoke.sbatch").read_text(
             encoding="utf-8"

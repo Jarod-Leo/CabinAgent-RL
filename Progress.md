@@ -691,3 +691,10 @@
 - 修复 `checkpoint_policy.py`：audit 分离完整与不完整 checkpoint；prune 仍严格要求 marker/保留点完整、拒绝删除任何更新 step 或越界/软链接目标，但允许把更旧的不完整 step 目录作为显式候选。新增 tombstone 回归；本地和远端各 5 项 storage tests 与 compileall 通过。
 - 用户确认精确清单后删除 `global_step_100`（11 文件、`31,443,788,637` bytes）、`global_step_150`（1 文件、7,316 bytes）和 `global_step_200`（1 文件、7,316 bytes）。远端 post-audit PASS：仅剩完整 `global_step_250`，11 文件、`31,443,788,637` bytes，marker=250。
 - F10 训练与存储后置条件至此闭环，但保留 Job `138821` 的真实 Slurm FAILED 历史。后续实验不自动提交；先确定 W&B 历史回填/实时记录契约，再由 post-F10 人工门禁决定 F11--F14 的首个实验。
+
+### 2026-09-04 Stage 19: W&B F10 Backfill Passed; F11 Selected
+
+- 用户确认 W&B project `CabinAgent-RL`：F10 回填历史数值曲线，F11--F14 原生实时记录；凭据仅通过交互式登录写入服务器用户 `~/.netrc`，未进入仓库、命令参数、Slurm 日志或实验配置。
+- 新增 `scripts/backfill_wandb_from_verl.py`，只解析三个 F10 trainer console 日志中的数值字段；本地 2 项 parser/segment-merge 测试与远端真实 dry-run 通过。正式回填上传 step 0--250 共 251 个 step、97 个数值指标，W&B run ID `2ut4t5d4`。
+- `launch_verl.py` 默认将未来 GRPO logger 设置为 `['console','wandb']`，仍可用 `WANDB_ENABLED=0` 显式关闭；本地/远端 W&B 与 training-config 定向测试均通过。原始对话、工具输出、模型和 checkpoint 不上传。
+- 用户选择 F11 Turn-Discount 为下一实验，并要求每 50 steps 用 dev 验证、每个实验最终只保留效果最佳 checkpoint。由于 CAR dev 分数存在并列，提交前尚需冻结 tie-break；在此之前不提交 F11。
