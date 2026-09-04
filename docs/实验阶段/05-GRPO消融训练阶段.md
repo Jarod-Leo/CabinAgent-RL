@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 pilot、step-6 resume、正式 step-50 与 step-100 均已 PASS（累计 38/100 有效 outcome-gradient step）。四项冷数据 HDD 精确归档与 7B/72B 直接加载 smoke 已验收，SSD 源经用户确认删除；F10 已从 `global_step_100` 提交单次连续运行到 step 250（Job `138821`，当前 PENDING）。
+进行中：F10 已完成 250 steps（累计 114/250 有效 outcome-gradient step）。Job `138821` 的训练与 step-250 保存成功，但自动 prune 因旧 step 残留目录失败；经代码修复和用户确认删除后，post-audit 仅剩完整 `global_step_250`。当前等待 W&B 记录契约与 post-F10 人工门禁。
 
 ## 目标
 
@@ -43,7 +43,7 @@
 ## 执行结果
 
 - E10-E14：未启动；阻塞原因是 G02 mixed outcome group ratio `0.0`。
-- F10-F14 正式 run：F10 首个 step-50 segment Job `136868` 已 PASS，step-100 resume Job `137588` 正在运行；F11-F14 未启动且不会自动串联。
+- F10-F14 正式 run：F10 已完成 250 steps，自动 prune 故障也已独立修复；F11-F14 配置已准备，但仍等待 post-F10 人工门禁且不会自动串联。
 - F10 pilot 已产生 `global_step_5` 可恢复 checkpoint；初始/最终 CAR dev mean@1 为 `0.230769/0.269231`，仅作五步集成诊断，不解释为性能提升。
 
 ## 已完成改进
@@ -806,3 +806,48 @@
 
 - PASS 标准：从 step 100 恢复 model/optimizer/extra 并完成 250/250，无 NaN/OOM/reward-schema error；50/150/200/250 评测与保存；`prune --expected-step 250` 后置条件通过且全项目仅保留 `global_step_250`；基础设施 requeue 不超过 2 次，科学异常立即失败返回。
 - 排队/运行期间冻结远端执行代码，不提交 F11-F14 或其他消融；完成或失败后按契约追加记录，再由人工门禁决定下一动作。
+
+### F10 continuous step-101--250 completion / Slurm 138821
+
+#### 实验设置
+
+- Run、模型、数据、seed、outcome GRPO、rank/alpha `32/32` LoRA、LR、4x4 rollout、长度、packed/chunked 路径、offload、caps `0.86/0.60` 与提交记录完全一致；从 `global_step_100` 恢复，目标 step 250，save/eval `50/50`。
+- 实际资源：`gpu-pro6000-11`、同一物理节点 2x Pro 6000、单一双 task `srun`、8 CPU、180 GiB；policy 和 72B simulator 直接从已验证 HDD 路径加载。
+
+#### 执行结果
+
+- Job 于 2026-09-04 04:56:28--13:37:47 UTC 运行 `08:41:19`；trainer 明确恢复 model/optimizer/RNG/LR scheduler，并完成 step 101--250。Step 101--250 有 `76/150` 个有效 outcome-gradient step、`74/150` 个零 advantage step，平均 batch reward mean `0.117139`；有效 grad norm 最小/均值/最大 `0.010334/0.040361/0.164800`。累计 step 1--250 为 `114/250` 有效 step。
+- CAR dev mean@1 在 step 100/150/200/250 为 `0.230769/0.269231/0.230769/0.230769`。无 NaN、OOM、reward-schema error 或 aborted trajectory；平均 step time `200.904s`。Simulator/trainer 峰值显存 `87,576/95,055 MiB`。
+- `global_step_250` 成功保存，11 文件、`31,443,788,637` bytes，marker=250。veRL 已把 step-150/200 actor 内容轮换掉，但留下各一个 7,316-byte `data.pt` 目录。
+- 自动 `prune --expected-step 250 --apply` 因旧清理器把不完整 step-200 视为审计致命错误而失败，batch 最终 `FAILED/1:0`；训练 task 本身为 `COMPLETED/0:0`。本 attempt 如实记为“训练完成、自动存储后置条件失败”。
+
+#### 改进原因
+
+- 旧清理器假设所有匹配 `global_step_*` 的目录都必须完整；该假设与 veRL 当前进程内轮换后保留 `data.pt` 残留目录的实际行为不一致。
+- 这是 checkpoint 生命周期工具缺陷，不是训练配置、资源、模型加载或科学假设失败。最终 dev 与 step-100 持平，因此当前结果只支持稳定有效梯度，不支持 vanilla F10 性能提升。
+
+#### 改进措施
+
+- Audit 分离完整 checkpoint 与旧 step 不完整残留；保留点仍必须满足 marker 和五类可恢复文件 schema。Prune 只允许删除小于 keep-step、父目录严格匹配且非软链接的显式目标，并在删除后再次要求唯一完整 keep-step 且无残留。
+- 新 successor 提交前必须先完成独立修复记录与 post-audit；F11--F14 继续保持人工门禁。
+
+### F10 checkpoint postcondition remediation / manual attempt 1
+
+#### 实验设置
+
+- 不申请 GPU、不重跑训练；修复范围仅为 `scripts/checkpoint_policy.py` 及其 storage regression。保留目标固定为 step 250。
+- 删除前 dry-run 精确识别：完整 step-100 与 step-250 各 11 文件、`31,443,788,637` bytes；不完整 step-150/200 各 1 文件、7,316 bytes；marker=250。
+
+#### 执行结果
+
+- 本地与远端 storage tests 各 `5/5 PASS`，compileall PASS。用户确认后删除 step-100/150/200；post-audit 仅剩完整 step-250，11 文件、`31,443,788,637` bytes，marker=250，无 incomplete checkpoint。
+- 删除可由 Git 中的执行代码复现，但 step-100/150/200 SSD 内容本身不可恢复；step-250 是当前唯一完整恢复点。HDD 的不可变父模型与 simulator 归档保持不变。
+
+#### 改进原因
+
+- 自动 prune 的失败使 Slurm 状态和训练事实不一致，并阻塞后续实验；必须在不篡改 Job 历史的前提下恢复已预注册的唯一最终 checkpoint 后置条件。
+
+#### 改进措施
+
+- 保留 Job `138821` 的 `FAILED/1:0` 事实，同时把手工 remediation 单独记录为 PASS。后续 F11--F14 复用修复后的收尾路径，避免相同 tombstone 再次导致假失败。
+- 下一步先决定 W&B：推荐回填 F10 step 1--250 console metrics，并让后续实验原生实时记录；完成记录契约后再由人工门禁选择下一消融，不自动提交。

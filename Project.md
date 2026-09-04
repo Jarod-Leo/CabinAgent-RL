@@ -1,6 +1,6 @@
 # Project.md: CabinAgent-RL
 
-**Version**: v0.7 continuous-run and tiered-storage execution
+**Version**: v0.8 F10 completion and postcondition recovery
 **Updated**: 2026-09-04
 **Goal**: 基于 CAR-bench 与 BFCL，比较 Direct-Instruct 与 Minimal-SFT fallback 初始化，并构建可复现的智能座舱多轮工具 Agent 训练、消融、评测与部署闭环。
 
@@ -152,10 +152,10 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 连续 step 101--250 已提交（Job `138821`），等待运行与 prune 后置条件验收 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 已完成 250 steps；Job `138821` 的自动 prune 失败已人工修复，等待 post-F10 人工门禁 |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 pilot、独立 resume、正式 step 50 和 step 100 训练均已完成。step 51--100 有 `17/50` 个有效 outcome-gradient step，累计 step 1--100 为 `38/100`。跨进程 checkpoint audit/prune、具备路径/软链接边界校验的 copy-only HDD 归档器，以及 restart-safe 的 F10--F14 连续 250-step launcher 已通过本地与远端回归；四项冷数据 `103,536,774,364` bytes 已完成 HDD 精确哈希归档，7B 与 72B-AWQ 直接 HDD 加载均通过，SSD 源已经用户确认删除（SSD 降至约 `52.4 GiB`）。F10 已从 `global_step_100` 提交单次连续运行到 step 250（Job `138821`），成功标准含 `prune --expected-step 250` 后置条件。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 已完成 250 steps。step 101--250 有 `76/150` 个有效 outcome-gradient step，累计 step 1--250 为 `114/250`；最终 CAR dev mean@1 为 `0.230769`，未建立性能提升结论。Job `138821` 因 veRL 留下的 step-150/200 不完整目录使自动 prune 报错而以 `FAILED/1:0` 结束，但 step-250 checkpoint 完整。清理器现能区分完整 checkpoint 与旧 step 残留目录；经用户确认，step-100/150/200 已删除，post-audit 仅剩 11 文件、`31,443,788,637` bytes 的 `global_step_250`，marker=250。F11--F14 继续等待人工门禁，不自动串联。
 
 ## 9. 实验记录契约
 

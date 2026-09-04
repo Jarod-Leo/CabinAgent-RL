@@ -32,7 +32,7 @@ G02 job `131950` reached first-user consistency `1.0` but produced zero mixed gr
 
 F01 job `132020` technically completed the 38-record fallback, but G03 attempt 1 (`132043`) failed after 6m10s on two Pro 6000 GPUs. The SFT targets had retained string-valued OpenAI `function.arguments`; Qwen templating double-encoded them, and CAR automatic evaluation crashed on string arguments. The old adapter is rejected for downstream use even though its training loss was low.
 
-The fallback route now requires corrected data, a template/parser round-trip test, a new F00/F01 run, and G03 attempt 2 under the unchanged 20x4 gate. G03 remains a fallback viability gate, not a retry of the direct-RL claim; only PASS permits F10-F14.
+The corrected fallback gate remained a valid FAIL and is not rewritten. A separately approved bounded F10 pilot directly established optimizer-signal and resume viability, after which the formal fallback family was manually unlocked. F10 is now complete; F11-F14 remain subject to a post-F10 human gate and never auto-chain.
 
 ## Main Run Matrix
 

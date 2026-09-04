@@ -678,3 +678,16 @@
 - 用户确认精确清单后仅删除四个已归档 SSD 目录（`global_step_50`、7B、72B-AWQ、F01-merged，合计 103,536,774,364 bytes）；复核 `checkpoints/` 仅剩 `global_step_100` + latest marker，模型目录清空，SSD 按字节数核算由约 `148.8` 降至约 `52.4 GiB`。
 - `checkpoint_policy.py audit` PASS（唯一 checkpoint step 100、11 文件 schema 完整、marker=100）后，以 `submit_fallback_ablation.sh f10 resume f10_formal_20260903_stage19` 提交连续作业 Job `138821`（`car-f10-full`，24h、同节点 2x Pro 6000、requeue≤2），manifest 已更新为 submitted；集群 Pro 6000 满载，当前 `PENDING (Priority)`。
 - 遗留问题：Job `138821` 需要完成 step 101--250 并通过 `prune --expected-step 250` 后置条件（最终仅保留 `global_step_250`）才算 PASS；F11-F14 仍等待 F10 结果与人工门禁。
+
+### 2026-09-04 Stage 19: F10 Reached Step 250; Automatic Prune Failed
+
+- Job `138821` 在 `gpu-pro6000-11` 使用同节点 2x Pro 6000，于 2026-09-04 04:56:28--13:37:47 UTC 运行 `08:41:19`。Trainer 从 `global_step_100` 恢复 model/optimizer/RNG/LR scheduler 并完成 step 101--250、step-150/200/250 validation 和完整 `global_step_250` 保存。
+- Step 101--250 有 `76/150` 个有效 outcome-gradient step，平均 batch reward mean `0.117139`；有效 step grad norm 最小/均值/最大为 `0.010334/0.040361/0.164800`。累计 step 1--250 为 `114/250` 个有效 outcome-gradient step。无 NaN、OOM、reward-schema error 或 aborted trajectory。
+- CAR dev mean@1 在 step 100/150/200/250 分别为 `0.230769/0.269231/0.230769/0.230769`，最终没有相对 step-100 提升。Simulator/trainer 峰值显存为 `87,576/95,055 MiB`，不再提高显存参数。
+- Slurm 最终为 `FAILED/1:0`，不是训练失败：veRL 在 step 150/200 轮换后留下各含一个 `data.pt` 的 7,316-byte 残留目录；旧 `checkpoint_policy.py` 在验证目标 step-250 前严格验证所有 step 目录，因此自动 prune 被不完整旧目录阻断。step-250 本身为 11 文件、`31,443,788,637` bytes，marker=250。
+
+### 2026-09-04 Stage 19: F10 Checkpoint Postcondition Recovered
+
+- 修复 `checkpoint_policy.py`：audit 分离完整与不完整 checkpoint；prune 仍严格要求 marker/保留点完整、拒绝删除任何更新 step 或越界/软链接目标，但允许把更旧的不完整 step 目录作为显式候选。新增 tombstone 回归；本地和远端各 5 项 storage tests 与 compileall 通过。
+- 用户确认精确清单后删除 `global_step_100`（11 文件、`31,443,788,637` bytes）、`global_step_150`（1 文件、7,316 bytes）和 `global_step_200`（1 文件、7,316 bytes）。远端 post-audit PASS：仅剩完整 `global_step_250`，11 文件、`31,443,788,637` bytes，marker=250。
+- F10 训练与存储后置条件至此闭环，但保留 Job `138821` 的真实 Slurm FAILED 历史。后续实验不自动提交；先确定 W&B 历史回填/实时记录契约，再由 post-F10 人工门禁决定 F11--F14 的首个实验。

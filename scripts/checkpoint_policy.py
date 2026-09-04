@@ -57,10 +57,26 @@ def audit_run(run_dir: Path, expected_step: int | None = None) -> dict[str, obje
     marker_step = int(marker.read_text(encoding="utf-8").strip())
     if expected_step is not None and marker_step != expected_step:
         raise ValueError(f"Latest marker {marker_step} does not match expected step {expected_step}")
-    entries = sorted(
-        (validate_checkpoint(item) for item in checkpoints.iterdir() if STEP_PATTERN.fullmatch(item.name)),
-        key=lambda value: int(value["step"]),
-    )
+    entries: list[dict[str, object]] = []
+    incomplete_entries: list[dict[str, object]] = []
+    for item in checkpoints.iterdir():
+        if not STEP_PATTERN.fullmatch(item.name):
+            continue
+        try:
+            entries.append(validate_checkpoint(item))
+        except ValueError as error:
+            incomplete_entries.append(
+                {
+                    "step": checkpoint_step(item),
+                    "path": item.resolve().as_posix(),
+                    "file_count": sum(1 for child in item.rglob("*") if child.is_file()),
+                    "size_bytes": checkpoint_size(item),
+                    "required_files_present": False,
+                    "error": str(error),
+                }
+            )
+    entries.sort(key=lambda value: int(value["step"]))
+    incomplete_entries.sort(key=lambda value: int(value["step"]))
     if not entries:
         raise FileNotFoundError(f"No complete checkpoints found under {checkpoints}")
     if marker_step not in {int(item["step"]) for item in entries}:
@@ -69,12 +85,14 @@ def audit_run(run_dir: Path, expected_step: int | None = None) -> dict[str, obje
         "run_dir": run_dir.as_posix(),
         "marker_step": marker_step,
         "checkpoints": entries,
+        "incomplete_checkpoints": incomplete_entries,
     }
 
 
 def prune_run(run_dir: Path, keep_step: int, apply: bool = False) -> dict[str, object]:
     audit = audit_run(run_dir, expected_step=keep_step)
     candidates = [item for item in audit["checkpoints"] if int(item["step"]) != keep_step]
+    candidates.extend(audit.get("incomplete_checkpoints", []))
     if any(int(item["step"]) > keep_step for item in candidates):
         raise ValueError("Refusing to prune a checkpoint newer than the selected keep step")
     removed: list[str] = []
@@ -86,8 +104,13 @@ def prune_run(run_dir: Path, keep_step: int, apply: bool = False) -> dict[str, o
                 raise ValueError(f"Refusing unsafe checkpoint deletion target: {target}")
             shutil.rmtree(target)
             removed.append(target.as_posix())
-        remaining = audit_run(run_dir, expected_step=keep_step)["checkpoints"]
-        if len(remaining) != 1 or int(remaining[0]["step"]) != keep_step:
+        after = audit_run(run_dir, expected_step=keep_step)
+        remaining = after["checkpoints"]
+        if (
+            len(remaining) != 1
+            or int(remaining[0]["step"]) != keep_step
+            or after.get("incomplete_checkpoints")
+        ):
             raise RuntimeError("Checkpoint pruning postcondition failed")
     return {
         **audit,

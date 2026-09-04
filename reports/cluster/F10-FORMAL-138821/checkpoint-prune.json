@@ -1,0 +1,37 @@
+{
+  "status": "pruned",
+  "expected_step": 250,
+  "marker_step": 250,
+  "kept": {
+    "path": "experiments/f10_formal_20260903_stage19/checkpoints/global_step_250",
+    "step": 250,
+    "file_count": 11,
+    "size_bytes": 31443788637,
+    "required_files_present": true
+  },
+  "removed": [
+    {
+      "path": "experiments/f10_formal_20260903_stage19/checkpoints/global_step_100",
+      "step": 100,
+      "file_count": 11,
+      "size_bytes": 31443788637,
+      "required_files_present": true
+    },
+    {
+      "path": "experiments/f10_formal_20260903_stage19/checkpoints/global_step_150",
+      "step": 150,
+      "file_count": 1,
+      "size_bytes": 7316,
+      "required_files_present": false
+    },
+    {
+      "path": "experiments/f10_formal_20260903_stage19/checkpoints/global_step_200",
+      "step": 200,
+      "file_count": 1,
+      "size_bytes": 7316,
+      "required_files_present": false
+    }
+  ],
+  "post_audit_complete_steps": [250],
+  "post_audit_incomplete_steps": []
+}

@@ -1,0 +1,44 @@
+{
+  "experiment_id": "F10-FORMAL-CONT",
+  "job_id": "138821",
+  "slurm_state": "FAILED",
+  "exit_code": "1:0",
+  "elapsed": "08:41:19",
+  "node": "gpu-pro6000-11",
+  "training_completed": true,
+  "step_range": [101, 250],
+  "resumed_from_step": 100,
+  "effective_outcome_gradient_steps": 76,
+  "total_steps_in_job": 150,
+  "cumulative_effective_steps": 114,
+  "cumulative_total_steps": 250,
+  "batch_reward_mean": 0.11713888893524806,
+  "effective_grad_norm": {
+    "min": 0.010333850048482418,
+    "mean": 0.040360810173871484,
+    "max": 0.16479963064193726
+  },
+  "validation_mean_at_1": {
+    "step_100": 0.23076923076923078,
+    "step_150": 0.2692307692307692,
+    "step_200": 0.23076923076923078,
+    "step_250": 0.23076923076923078
+  },
+  "aborted_ratio_max": 0.0,
+  "mean_step_time_seconds": 200.90364449146205,
+  "gpu_memory_peak_mib": {
+    "simulator": 87576,
+    "trainer": 95055,
+    "total_per_gpu": 97887
+  },
+  "final_checkpoint": {
+    "step": 250,
+    "file_count": 11,
+    "size_bytes": 31443788637,
+    "marker": 250
+  },
+  "automatic_postcondition": "failed_on_incomplete_step_200_tombstone",
+  "manual_remediation": "passed",
+  "post_remediation_complete_checkpoints": [250],
+  "claim": "F10 maintained usable outcome-gradient signal but did not improve final CAR dev mean@1 over step 100."
+}

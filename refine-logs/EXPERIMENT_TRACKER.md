@@ -52,10 +52,11 @@
 | STORAGE-ARCHIVE | 1 | complete | copy-only HDD archive: F10 step50 + three immutable model trees | 138014 | - | - | - | - | reports/storage/archive-138014.json | 25m24s; 133 files/103,536,774,364 bytes exact SHA-256 PASS; source_deleted=false |
 | HDD-F01-LOAD | 1 | complete | corrected F01 merged parent loaded directly from verified HDD archive | 138060 | - | - | - | - | reports/f01_parent_validation_138060.json | 1m46s; 10 files/15.24 GB hash + BF16 7.616B load/tokenizer/generation PASS |
 | HDD-72B-LOAD | 1 | complete | 72B-AWQ simulator loaded directly from verified HDD archive | 138064 | - | - | - | - | reports/simulator_smoke_138064.json | 4m37s; shard read 122.16s/model load 128.29s; AWQ-Marlin health + 3 requests PASS |
-| F10-FORMAL-CONT | 1 | queued | resume global_step_100; single continuous 24h job to 250; models from HDD | 138821 | 100/250 | - | - | - | experiments/f10_formal_20260903_stage19 | submitted after HDD acceptance + user-confirmed SSD deletion of four archived sources; audit marker=100 schema PASS; PENDING (Priority); prune postcondition expected-step 250 |
-| F11 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | Turn-Discount |
-| F12 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | LATA |
-| F13 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | PRM-Lite |
-| F14 | 1 | blocked_on_G03 | corrected F01 adapter + new RL LoRA | - | - | - | - | - | - | PRM-Lite + LATA |
+| F10-FORMAL-CONT | 1 | failed | resume global_step_100; single continuous job to 250; models from HDD | 138821 | 250/250 | 0.230769 final | 76/150 effective in this job; 114/250 cumulative | 0.117139 batch reward mean | experiments/f10_formal_20260903_stage19 | training/checkpoint complete; Slurm FAILED/1:0 because automatic prune rejected step150/200 tombstones |
+| F10-FORMAL-PRUNE | 1 | complete | manual postcondition remediation; keep step250 | - | 250/250 | - | - | - | reports/cluster/F10-FORMAL-138821/checkpoint-prune.json | local+remote 5 tests PASS; user-confirmed deletion of step100/150/200; unique complete checkpoint step250 |
+| F11 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | Turn-Discount; awaiting post-F10 human gate and W&B contract |
+| F12 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | LATA; awaiting post-F10 human gate |
+| F13 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite; awaiting post-F10 human gate |
+| F14 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite + LATA; awaiting post-F10 human gate |
 
 Statuses: `pending`, `prepared`, `blocked_on_F00`, `blocked_on_F01`, `blocked_on_G02`, `blocked_on_G03`, `blocked_on_failed_dependency`, `queued`, `running`, `failed`, `stopped`, `cancelled`, `complete`. Never replace a failed row; add a new attempt.

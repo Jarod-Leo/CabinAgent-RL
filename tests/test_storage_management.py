@@ -20,11 +20,13 @@ class StorageManagementTests(unittest.TestCase):
                 {"step": 50, "path": old.as_posix()},
                 {"step": 100, "path": keep.as_posix()},
             ],
+            "incomplete_checkpoints": [],
         }
         after = {
             "run_dir": run_dir.as_posix(),
             "marker_step": 100,
             "checkpoints": [{"step": 100, "path": keep.as_posix()}],
+            "incomplete_checkpoints": [],
         }
         with patch("scripts.checkpoint_policy.audit_run", side_effect=[before, after]), patch(
             "scripts.checkpoint_policy.shutil.rmtree"
@@ -32,6 +34,32 @@ class StorageManagementTests(unittest.TestCase):
             result = prune_run(run_dir, 100, apply=True)
         self.assertEqual(result["removed"], [old.resolve().as_posix()])
         remove.assert_called_once_with(old.resolve())
+
+    def test_prune_removes_older_incomplete_checkpoint_tombstone(self) -> None:
+        run_dir = ROOT / "experiments" / "test-run"
+        checkpoint_root = run_dir / "checkpoints"
+        stale = checkpoint_root / "global_step_50"
+        keep = checkpoint_root / "global_step_100"
+        before = {
+            "run_dir": run_dir.as_posix(),
+            "marker_step": 100,
+            "checkpoints": [{"step": 100, "path": keep.as_posix()}],
+            "incomplete_checkpoints": [
+                {"step": 50, "path": stale.as_posix(), "required_files_present": False}
+            ],
+        }
+        after = {
+            "run_dir": run_dir.as_posix(),
+            "marker_step": 100,
+            "checkpoints": [{"step": 100, "path": keep.as_posix()}],
+            "incomplete_checkpoints": [],
+        }
+        with patch("scripts.checkpoint_policy.audit_run", side_effect=[before, after]), patch(
+            "scripts.checkpoint_policy.shutil.rmtree"
+        ) as remove:
+            result = prune_run(run_dir, 100, apply=True)
+        self.assertEqual(result["removed"], [stale.resolve().as_posix()])
+        remove.assert_called_once_with(stale.resolve())
 
     def test_archive_inventory_and_safe_relative_paths(self) -> None:
         source = Path(__file__)
