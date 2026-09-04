@@ -698,3 +698,11 @@
 - 新增 `scripts/backfill_wandb_from_verl.py`，只解析三个 F10 trainer console 日志中的数值字段；本地 2 项 parser/segment-merge 测试与远端真实 dry-run 通过。正式回填上传 step 0--250 共 251 个 step、97 个数值指标，W&B run ID `2ut4t5d4`。
 - `launch_verl.py` 默认将未来 GRPO logger 设置为 `['console','wandb']`，仍可用 `WANDB_ENABLED=0` 显式关闭；本地/远端 W&B 与 training-config 定向测试均通过。原始对话、工具输出、模型和 checkpoint 不上传。
 - 用户选择 F11 Turn-Discount 为下一实验，并要求每 50 steps 用 dev 验证、每个实验最终只保留效果最佳 checkpoint。由于 CAR dev 分数存在并列，提交前尚需冻结 tie-break；在此之前不提交 F11。
+
+### 2026-09-05 Stage 20: F11 Best-Checkpoint Tooling Validated Locally
+
+- 用户确认完整选择契约：F11 Turn-Discount 单次 250 steps；训练作业内每 50 steps 用 CAR dev mean@1 验证；step 0 只作 baseline；仅严格提升时保存，同分保留较早 checkpoint；中断从当前最佳恢复并允许重复少量训练区间。
+- 新增 Ray actor 内的 best-checkpoint controller：延迟 veRL 边界保存，先使用内存模型验证，再调用原生保存；选择状态原子持久化并带 pending 恢复，保存完整后复用严格 audit/prune。W&B 同步记录 candidate/best score、best step 和是否入选。
+- 启用 veRL 原生 LoRA-only 可恢复 checkpoint：模型 shard 只保存 LoRA，同时继续保存 optimizer 与 RNG/LR scheduler；上游 retention 暂停，由项目选择器按最佳 step 管理。新增 `audit-best` 最终后置条件。
+- 新增 F10 step-50 adapter 导出/验证 Slurm 入口：使用 veRL FSDP merger 只导出 PEFT LoRA，校验 rank/alpha、safetensors keys，并以 HDD corrected-F01 parent 完成 one-token GPU generation；目标已存在时拒绝覆盖。
+- 本地 51/51 unit tests、Python compilation 与 diff check 通过；未提交或修改任何 Slurm job。下一步同步远端、检查 Hydra/Ray/veRL 实际路径，并先提交单卡 F10 adapter export/validation。

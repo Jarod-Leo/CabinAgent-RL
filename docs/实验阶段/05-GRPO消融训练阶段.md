@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 已完成 250 steps（累计 114/250 有效 outcome-gradient step），存储后置条件已人工恢复，0--250 数值曲线已回填 W&B。用户已选择 F11 Turn-Discount 为下一实验；提交前等待 best-checkpoint 同分规则冻结。
+进行中：F10 已完成 250 steps并回填 W&B；按严格提升/同分留早规则选中 step 50。F11 Turn-Discount 的训练内 best-checkpoint 与 LoRA-only 可恢复存储已通过本地回归，等待远端 pre-flight 与 F10 adapter 导出验证。
 
 ## 目标
 
@@ -32,7 +32,7 @@
 | Policy LoRA | rank/alpha `32/32` |
 | Simulator | 固定 72B-AWQ vLLM，不训练 |
 | 训练长度 | 最多 250 steps |
-| Checkpoint/eval | 50、100、150、200、250 评测；SSD 仅保留最新 1 个完整可恢复 checkpoint |
+| Checkpoint/eval | 50、100、150、200、250 训练内评测；step 0 不参选，CAR dev mean@1 严格提升才保存，同分留早；训练期仅 1 个 LoRA-only 可恢复 checkpoint |
 | Turn discount alpha | `1.05` |
 | PRM-Lite range | clip 到 `[-0.5, 0.5]` |
 | Process weight | `0.3` |
@@ -872,3 +872,26 @@
 
 - 增加可复现的 console 历史回填入口；未来 GRPO 使用 `trainer.logger=['console','wandb']`，同时保留本地日志作为独立证据源。
 - 用户已选择 F11 Turn-Discount；每 50 steps 固定 dev 验证，最终仅保留 dev 最优 checkpoint。提交前先冻结并列分数的 tie-break 和对应存储行为。
+
+### F11 best-checkpoint and F10 adapter preparation / local attempt 1
+
+#### 实验设置
+
+- F11 固定 Turn-Discount `alpha=1.05`、corrected-F01 merged parent、fresh rank/alpha `32/32` LoRA、4x4 rollout、seed 42、250 steps 和每 50 steps CAR dev；GPU caps 与 F10 保持 `0.86/0.60`。
+- 选择指标固定 `val-core/car_bench/reward/mean@1`；step 0 仅报告，50/100/150/200/250 中仅严格提升保存，同分保留较早 step。Slurm 尚未提交。
+
+#### 执行结果
+
+- 项目侧 Ray task runner 在 actor 进程内注册 Turn-Discount estimator 和 best-checkpoint controller；controller 延迟 `_save_checkpoint`，先完成 `_validate`，再按选择结果调用 veRL 原生保存。
+- 选择状态带 baseline、history、best 与 pending transaction；新 `audit-best` 要求 marker、状态和唯一完整 checkpoint 一致。启用 veRL 原生 `save_lora_only=true`，仍保留 optimizer 与 RNG/LR scheduler 可恢复状态。
+- 新增 F10 step-50 adapter 导出/加载验证入口。当前本地 51/51 tests、compileall、`git diff --check` PASS；0 GPU、0 optimizer step、无远端文件变化。
+
+#### 改进原因
+
+- veRL 0.9 V1 默认在同一边界先保存再验证，且 latest retention 不能表达“只保留 dev 最佳”；五个约 31.4 GB 完整 full-base checkpoint 也会超过 HDD 预算。
+- 已确认的实验契约要求训练内验证、非提升不落盘、同分留早，并在实验结束后只保留可评测的 LoRA adapter。
+
+#### 改进措施
+
+- 保持训练循环本体、optimizer、rollout、reward 与 advantage 不变，只在 Ray task runner 内包装 save/validate；仅新最佳写盘，写后严格验证并清理旧最佳。
+- 远端必须通过代码 hash、unit/compile、Bash、Hydra resolved config、Ray task-runner import、Slurm test-only 和 W&B 状态检查；随后先提交单卡 F10 adapter export/parent+adapter generation validation。该验证完成并记录前不提交 F11。

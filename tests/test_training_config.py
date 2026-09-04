@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch
 
@@ -183,6 +184,24 @@ class TrainingConfigTests(unittest.TestCase):
             validate_paths=False,
         )
         self.assertIn("trainer.logger=['console','wandb']", overrides)
+
+    def test_f11_best_checkpoint_disables_upstream_retention(self) -> None:
+        config = ROOT / "configs" / "train" / "fallback_ablations" / "turn_discount.yaml"
+        with patch.dict(os.environ, {"CABIN_BEST_CHECKPOINT_ENABLED": "1"}, clear=False):
+            _, overrides = build_overrides(
+                config,
+                "test-f11-best",
+                ROOT / "experiments" / "test-f11-best",
+                validate_paths=False,
+            )
+        self.assertIn("trainer.max_actor_ckpt_to_keep=-1", overrides)
+        self.assertIn("trainer.max_critic_ckpt_to_keep=-1", overrides)
+        self.assertIn("+trainer.cabin_best_checkpoint.enabled=true", overrides)
+        self.assertIn("trainer.v1.trainer_mode=sync", overrides)
+        self.assertIn(
+            "+actor_rollout_ref.actor.checkpoint.save_lora_only=true",
+            overrides,
+        )
 
     def test_simulator_smoke_accepts_an_explicit_model_path(self) -> None:
         script = (ROOT / "scripts/slurm_simulator_smoke.sbatch").read_text(

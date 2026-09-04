@@ -2,14 +2,16 @@
 
 ## Goal
 
-Build the first runnable baseline slice for CabinAgent-RL from `Project.md`: project structure, configs, lightweight benchmark loaders, model adapters, trajectory persistence, metrics, reports, and smoke-test scripts. Record each completed stage in `Progress.md`.
+Complete the fallback-GRPO ablation sequence reproducibly. The active objective is to export and validate F10's selected step-50 LoRA adapter, implement training-time best-checkpoint selection, and launch F11 Turn-Discount as one 250-step same-node dual-GPU job with 50-step CAR-dev validation and W&B tracking.
 
 ## Scope For This Session
 
-- Implement a local, dependency-light baseline that can run without GPUs or downloaded benchmark packages.
-- Keep adapters shaped so real CAR-bench, BFCL, vLLM, and HF backends can be plugged in later.
-- Produce deterministic sample outputs, reports, and failure cases for development sanity.
-- Do not claim real CAR-bench/BFCL scores until official datasets and models are connected.
+- Preserve F10's honest Slurm history and select step 50 as its earliest tied best CAR-dev checkpoint (`0.269231`).
+- Export the F10 step-50 actor LoRA through the installed veRL converter and validate parent+adapter loading before proposing exact full-checkpoint deletion targets.
+- Implement best-checkpoint selection for F11: validate in memory every 50 steps, save only strict improvements, and keep the earlier checkpoint on ties.
+- Keep step 0 as a reported baseline but exclude it from trained-checkpoint selection.
+- Run local and remote tests, live cluster/storage pre-flight, W&B verification, and Slurm test-only before submitting F11.
+- Submit no F12 successor; F11 completion requires manual review and full stage documentation.
 
 ## Phases
 
@@ -30,9 +32,20 @@ Build the first runnable baseline slice for CabinAgent-RL from `Project.md`: pro
 | 12. Simulator environment and smoke | complete | GPU environment, 7B/72B-AWQ snapshots, CAR parquet, AWQ-Marlin serving, and project-SSD caches are verified. |
 | 13. CAR agent loop and Direct-RL gate | complete_fail | G00-G02 ran; valid G02 reached consistency 1.0 but mixed group ratio 0.0, so E10-E14 remain blocked. |
 | 14. Minimal-SFT fallback | complete_fail | Corrected F01/G03 and F02/G04 completed; F02/G04 is retained as a negative corrective-SFT result and F03/G05 is paused. |
-| 15. Fallback veRL pilot | in_progress | Reclassify the numerical gate as diagnostic, initialize from corrected F01, then run a manually reviewed 5-step F10 pilot with save/resume and GPU telemetry. |
-| 16. Five GRPO ablations | blocked_on_F10_pilot | After manual F10 pilot acceptance and system-parameter freeze, run F10-F14 for 250 steps with checkpoint evaluation at 50/100/150/200/250. |
+| 15. Fallback veRL pilot | complete | F10 pilot/save/resume and the formal 250-step F10 run completed with usable outcome-gradient signal. |
+| 16. Five GRPO ablations | in_progress | F10 is complete and W&B-backfilled; F11 Turn-Discount is selected and awaiting best-checkpoint tooling plus pre-flight. |
 | 17. Frozen evaluation | pending | Select checkpoints on CAR dev/BFCL, then run CAR test once and produce the final comparison. |
+
+## Current F11 Turn-Discount Execution
+
+| Step | Status | Acceptance |
+|---|---|---|
+| Freeze selection/storage contract | complete | CAR dev mean@1 at 50-step boundaries; strict improvement only; ties keep earlier; step 0 excluded; completed runs retain validated LoRA adapter rather than full optimizer checkpoint. |
+| Implement best-checkpoint tooling | in_progress | Local implementation and 51 tests PASS; remote Hydra/Ray/veRL integration and LoRA-only save/load smoke remain. |
+| Export F10 selected adapter | pending | Convert archived F10 step 50 with veRL, validate adapter inventory and a parent+adapter generation smoke, then present exact full-checkpoint deletion targets for separate approval. |
+| Remote pre-flight | pending | Current Slurm/QoS/GPU/storage/W&B state checked; code hashes, tests, Bash, Hydra rendering, and Slurm test-only pass. |
+| Submit F11 | pending | One 250-step job, same physical node 2x Pro 6000, Turn-Discount alpha 1.05, 50-step dev validation, console+W&B, no F12 successor. |
+| Monitor and close F11 | pending | 250/250 or honest failed attempt; best-step history, gradients, GPU telemetry, adapter export, stage docs, and GitHub sync complete. |
 
 ## Current F02/G04 Attempt
 
@@ -75,11 +88,17 @@ Build the first runnable baseline slice for CabinAgent-RL from `Project.md`: pro
 - Use corrected F01, not F02, as the shared initialization for F10-F14. Preserve F02/G04 as a negative transfer result and pause F03/G05.
 - Optimize stable throughput only through semantics-preserving system knobs, with roughly 10-15% dynamic VRAM headroom, then freeze the selected settings across all formal branches.
 - Never auto-submit a formal run after the pilot; require manual metric, trajectory, checkpoint, and GPU-telemetry review.
+- For F11-F14, evaluate the in-memory actor every 50 steps and materialize a full checkpoint only when CAR dev mean@1 strictly improves over prior trained checkpoints; ties retain the earlier step.
+- Step 0 remains a shared initialization baseline and does not compete with step 50/100/150/200/250 for each method's selected trained checkpoint.
+- After a completed experiment, export and validate the best actor LoRA adapter, configuration, metrics, and inventory; remove full optimizer/RNG checkpoints only after an exact deletion list is separately approved.
 
 ## Errors Encountered
 
 | Error | Attempt | Resolution |
 |---|---|---|
+| `apply_patch` rejected a patch with two separate updates to `src/training/verl_entrypoint.py` | F11 tooling attempt 1 | No files were changed; combine the import and body edit into one file operation, then reapply the same scoped implementation. |
+| `apply_patch` looked for test assertions inside `scripts/launch_verl.py` | F11 tooling attempt 2 | No files were changed; split the launcher and test edits into their correct files. |
+| Adapter inventory unit test referenced nonexistent `tests/fixtures/parent_manifest` | F10 adapter-export tooling test 1 | Production code compiled; point the immutable test at existing `tests/fixtures/merge_output` and rerun the full suite with fail-fast command chaining. |
 | `git status` failed because this folder is not a git repository | Initial orientation | Record as an environment fact; continue without git-based change tracking. |
 | Default PowerShell output showed mojibake for Chinese markdown | Initial `Get-Content` | Re-read files with UTF-8 output encoding. |
 | `ModuleNotFoundError: No module named 'src'` when running scripts by file path | First data-builder smoke test | Added repository root to `sys.path` in standalone data builder scripts. |

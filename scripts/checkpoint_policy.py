@@ -121,6 +121,25 @@ def prune_run(run_dir: Path, keep_step: int, apply: bool = False) -> dict[str, o
     }
 
 
+def audit_best_run(run_dir: Path) -> dict[str, object]:
+    state_path = run_dir.resolve() / "metrics" / "best_checkpoint.json"
+    if not state_path.is_file():
+        raise FileNotFoundError(f"Best-checkpoint state is missing: {state_path}")
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    if state.get("pending_candidate") is not None:
+        raise ValueError("Best-checkpoint state still has a pending candidate")
+    best = state.get("best")
+    if not isinstance(best, dict):
+        raise ValueError("Best-checkpoint state does not contain a selected checkpoint")
+    best_step = int(best["step"])
+    audit = audit_run(run_dir, expected_step=best_step)
+    if len(audit["checkpoints"]) != 1 or audit.get("incomplete_checkpoints"):
+        raise ValueError("Best-checkpoint postcondition requires exactly one complete checkpoint")
+    if int(audit["checkpoints"][0]["step"]) != best_step:
+        raise ValueError("The only complete checkpoint is not the recorded best step")
+    return {**audit, "best_checkpoint_state": state, "status": "best_checkpoint_verified"}
+
+
 def write_json(path: Path | None, value: dict[str, object]) -> None:
     payload = json.dumps(value, indent=2, sort_keys=True) + "\n"
     if path is None:
@@ -134,7 +153,7 @@ def write_json(path: Path | None, value: dict[str, object]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("audit", "prune"))
+    parser.add_argument("mode", choices=("audit", "prune", "audit-best"))
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--expected-step", type=int)
     parser.add_argument("--apply", action="store_true")
@@ -143,6 +162,8 @@ def main() -> None:
     run_dir = ROOT / "experiments" / args.run_id
     if args.mode == "audit":
         result = audit_run(run_dir, expected_step=args.expected_step)
+    elif args.mode == "audit-best":
+        result = audit_best_run(run_dir)
     else:
         if args.expected_step is None:
             parser.error("prune requires --expected-step")

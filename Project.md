@@ -1,7 +1,7 @@
 # Project.md: CabinAgent-RL
 
-**Version**: v0.8 F10 completion and postcondition recovery
-**Updated**: 2026-09-04
+**Version**: v0.9 F11 best-checkpoint preparation
+**Updated**: 2026-09-05
 **Goal**: 基于 CAR-bench 与 BFCL，比较 Direct-Instruct 与 Minimal-SFT fallback 初始化，并构建可复现的智能座舱多轮工具 Agent 训练、消融、评测与部署闭环。
 
 ## 1. 已确认边界
@@ -15,6 +15,7 @@
 - Active storage root: project SSD `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL`；cold archive root: project HDD `/projects/cabinagentrlarchive`。不可变模型可在计算节点通过显式 HDD 路径直接加载；checkpoint、环境、缓存、训练数据和实时日志保留在 SSD。
 - 正式消融完整保留五组：Vanilla、Turn-Discount、LATA、PRM-Lite、PRM-Lite + LATA。
 - 实验跟踪使用 W&B project `CabinAgent-RL`：只上传训练/评测数值指标与非敏感配置，不上传原始对话、tool outputs、checkpoint 或凭据；F10 console 历史已回填，后续实验使用 console + W&B 实时双写。
+- F11--F14 在训练作业内每 50 steps 用 CAR dev mean@1 选择 checkpoint：step 0 只作 baseline；只有严格提升才保存并替换，同分保留更早 step。训练期保存 LoRA-only model state + optimizer/RNG 以保持可恢复；完成后仅归档验证通过的 actor LoRA、配置、指标和清单。
 
 ## 2. 主流程
 
@@ -153,10 +154,10 @@ Simulator 初始配置：AWQ-Marlin kernel、TP=1、`max_model_len=8192`、`max_
 | 02 | [集群运行时与双模型部署阶段](docs/实验阶段/02-集群运行时与双模型部署阶段.md) | 已完成 |
 | 03 | [Direct-RL 门禁阶段](docs/实验阶段/03-Direct-RL门禁阶段.md) | 已完成，结论为 FAIL |
 | 04 | [Minimal-SFT 回退阶段](docs/实验阶段/04-Minimal-SFT回退阶段.md) | 已完成至 G04，F02 为负结果，F03 暂停 |
-| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 已完成 250 steps；Job `138821` 的自动 prune 失败已人工修复，等待 post-F10 人工门禁 |
+| 05 | [GRPO 消融训练阶段](docs/实验阶段/05-GRPO消融训练阶段.md) | 进行中，F10 已闭环；F11 best-checkpoint/LoRA-only tooling 本地验证通过，等待远端 pre-flight |
 | 06 | [统一评测与报告阶段](docs/实验阶段/06-统一评测与报告阶段.md) | 未开始 |
 
-统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 已完成 250 steps。step 101--250 有 `76/150` 个有效 outcome-gradient step，累计 step 1--250 为 `114/250`；最终 CAR dev mean@1 为 `0.230769`，未建立性能提升结论。Job `138821` 因 veRL 留下的 step-150/200 不完整目录使自动 prune 报错而以 `FAILED/1:0` 结束，但 step-250 checkpoint 完整。清理器现能区分完整 checkpoint 与旧 step 残留目录；经用户确认，step-100/150/200 已删除，post-audit 仅剩 11 文件、`31,443,788,637` bytes 的 `global_step_250`，marker=250。F10 的 0--250 数值曲线已回填 W&B，后续 logger 已切换为 console + W&B。F11 Turn-Discount 已获人工选择，但提交前须冻结 best-checkpoint 同分规则。
+统一入口见 [实验阶段总览](docs/实验阶段/实验阶段总览.md)。F02/G04 已作为负 corrective-SFT 结果归档，F03/G05 暂停；F10 已完成 250 steps并回填 W&B。按冻结的严格提升/同分留早规则，F10 最佳为 step 50（与 step 150 同为 `0.269231`），而当前 SSD step 250 为 `0.230769`；先从已校验 HDD step-50 副本导出并加载验证 adapter，再单独确认完整 checkpoint 删除。F11 Turn-Discount 已选择，训练内 best-checkpoint 与 LoRA-only 可恢复存储的本地 51 项回归通过，尚未提交 Slurm。
 
 ## 9. 实验记录契约
 

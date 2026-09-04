@@ -82,6 +82,13 @@ def build_overrides(
         "off",
     }
     trainer_loggers = "['console','wandb']" if wandb_enabled else "['console']"
+    best_checkpoint_enabled = os.environ.get("CABIN_BEST_CHECKPOINT_ENABLED", "0") == "1"
+    actor_retention = -1 if best_checkpoint_enabled else int(
+        os.environ.get("MAX_ACTOR_CKPT_TO_KEEP", 1)
+    )
+    critic_retention = -1 if best_checkpoint_enabled else int(
+        os.environ.get("MAX_CRITIC_CKPT_TO_KEEP", 1)
+    )
     overrides = [
         f"algorithm.adv_estimator={experiment['advantage_estimator']}",
         "+algorithm.turn_discount.alpha="
@@ -128,6 +135,8 @@ def build_overrides(
         + env_value("ENTROPY_FROM_LOGITS_WITH_CHUNKING", True),
         "actor_rollout_ref.actor.entropy_from_logits_chunk_size="
         + env_value("ENTROPY_FROM_LOGITS_CHUNK_SIZE", 2048),
+        "+actor_rollout_ref.actor.checkpoint.save_lora_only="
+        + str(best_checkpoint_enabled).lower(),
         f"actor_rollout_ref.actor.ppo_max_token_len_per_gpu={sequence_length}",
         "actor_rollout_ref.actor.fsdp_config.param_offload="
         + env_value("ACTOR_PARAM_OFFLOAD", True),
@@ -149,13 +158,15 @@ def build_overrides(
         "reward.custom_reward_function.name=compute_score",
         "trainer.nnodes=1",
         "trainer.n_gpus_per_node=1",
+        "trainer.v1.trainer_mode=sync",
         f"trainer.total_training_steps={max_steps}",
         f"trainer.save_freq={save_freq}",
         f"trainer.test_freq={eval_freq}",
-        "trainer.max_actor_ckpt_to_keep="
-        + env_value("MAX_ACTOR_CKPT_TO_KEEP", 1),
-        "trainer.max_critic_ckpt_to_keep="
-        + env_value("MAX_CRITIC_CKPT_TO_KEEP", 1),
+        f"trainer.max_actor_ckpt_to_keep={actor_retention}",
+        f"trainer.max_critic_ckpt_to_keep={critic_retention}",
+        "+trainer.cabin_best_checkpoint.enabled=" + str(best_checkpoint_enabled).lower(),
+        "+trainer.cabin_best_checkpoint.metric_key="
+        + str(os.environ.get("CABIN_BEST_CHECKPOINT_METRIC", "val-core/car_bench/reward/mean@1")),
         "trainer.project_name=CabinAgent-RL",
         f"trainer.experiment_name={run_id}",
         f"trainer.default_local_dir={run_dir.as_posix()}/checkpoints",

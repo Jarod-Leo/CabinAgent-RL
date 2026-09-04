@@ -64,9 +64,14 @@ run_status=$?
 set -e
 
 if [[ "$run_status" -eq 0 ]]; then
-  if ! "$PYTHON_BIN" -B scripts/checkpoint_policy.py prune \
-    --run-id "$RUN_ID" --expected-step "$MAX_TRAINING_STEPS" --apply \
-    --report "$PROJECT_ROOT/reports/storage/checkpoint-prune-${SLURM_JOB_ID}.json"; then
+  checkpoint_args=(audit-best --run-id "$RUN_ID")
+  report_name="checkpoint-best-${SLURM_JOB_ID}.json"
+  if [[ "${CABIN_BEST_CHECKPOINT_ENABLED:-0}" != "1" ]]; then
+    checkpoint_args=(prune --run-id "$RUN_ID" --expected-step "$MAX_TRAINING_STEPS" --apply)
+    report_name="checkpoint-prune-${SLURM_JOB_ID}.json"
+  fi
+  if ! "$PYTHON_BIN" -B scripts/checkpoint_policy.py "${checkpoint_args[@]}" \
+    --report "$PROJECT_ROOT/reports/storage/$report_name"; then
     echo "Training completed but checkpoint postcondition failed" >&2
     run_status=1
   fi

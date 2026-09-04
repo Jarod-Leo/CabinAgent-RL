@@ -1,13 +1,33 @@
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from scripts.archive_storage import inventory, safe_batch_id, safe_relative
-from scripts.checkpoint_policy import prune_run
+from scripts.checkpoint_policy import audit_best_run, prune_run
 from scripts.launch_verl import ROOT, build_overrides
 
 
 class StorageManagementTests(unittest.TestCase):
+    def test_best_checkpoint_audit_requires_unique_recorded_step(self) -> None:
+        run_dir = ROOT / "experiments" / "test-best-run"
+        state = {
+            "best": {"step": 50, "score": 0.25},
+            "pending_candidate": None,
+        }
+        audit = {
+            "run_dir": run_dir.as_posix(),
+            "marker_step": 50,
+            "checkpoints": [{"step": 50, "path": "global_step_50"}],
+            "incomplete_checkpoints": [],
+        }
+        with patch.object(Path, "is_file", return_value=True), patch.object(
+            Path, "read_text", return_value=json.dumps(state)
+        ), patch("scripts.checkpoint_policy.audit_run", return_value=audit):
+            result = audit_best_run(run_dir)
+        self.assertEqual(result["status"], "best_checkpoint_verified")
+        self.assertEqual(result["marker_step"], 50)
+
     def test_cross_process_checkpoint_prune_keeps_marker_step(self) -> None:
         run_dir = ROOT / "experiments" / "test-run"
         checkpoint_root = run_dir / "checkpoints"
@@ -113,7 +133,8 @@ class StorageManagementTests(unittest.TestCase):
         self.assertIn("#SBATCH --requeue", slurm)
         self.assertIn("restart-${restart_count}.done", slurm)
         self.assertIn("--ntasks=2 --gpus-per-task=1 --gpu-bind=single:1", slurm)
-        self.assertIn("checkpoint_policy.py prune", slurm)
+        self.assertIn("checkpoint_args=(audit-best", slurm)
+        self.assertIn("checkpoint_args=(prune", slurm)
 
 
 if __name__ == "__main__":

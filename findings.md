@@ -111,6 +111,21 @@
 - Corrective records must not retain failed assistant tool calls because the current SFT encoder labels every assistant span. The safe construction is a fresh system/user prefix followed by a correct no-tool response, plus a second no-retry dialogue for the same task.
 - F02 will train from the same Qwen2.5-7B base on the union of successful gate trajectories and corrective records. This avoids adapter stacking while retaining F01's successful-behavior coverage.
 - G04 must keep the G03 task manifest, sampling, reward, and thresholds unchanged. It may only change the policy adapter produced by F02.
+
+## 2026-09-05 F11 best-checkpoint contract
+
+- User selected F11 Turn-Discount (`alpha=1.05`) after F10 and confirmed one continuous 250-step Slurm job with CAR dev evaluation every 50 optimizer steps.
+- The selection metric is CAR dev mean@1. A candidate replaces the incumbent only on strict improvement; ties retain the earlier checkpoint. Step 0 is reported as the common initialization baseline but is excluded from trained-checkpoint selection.
+- Validation must happen inside the same allocated training job using the actor already in memory. A non-improving candidate is not written. On improvement, the new complete checkpoint is written and verified before the old best is removed.
+- Preemption therefore resumes from the current best rather than necessarily the latest step, and may repeat some training work. The user explicitly accepted this tradeoff.
+- Completed experiments retain the validated actor LoRA adapter plus config/metrics/inventory, not the roughly 31.4 GB optimizer/RNG checkpoint. Any full-checkpoint deletion still requires an exact read-only inventory and separate approval.
+- Installed veRL 0.9 currently calls `_save_checkpoint()` before `_validate()` at each boundary. A narrow runtime integration is required to defer the save until validation establishes a strict improvement.
+- The active formal launcher resolves to veRL's V1 `PPOTrainer.fit` (`trainer/ppo/v1/trainer_base.py`), not the legacy `ray_trainer.py`: lines 456--476 save first and validate second. `TaskRunnerV1` selects a registered trainer class inside a Ray actor, so a project-local integration must also be imported inside that actor; a driver-only monkey patch would not be reliable.
+- A KISS-compatible implementation can wrap the V1 trainer's save/validate methods inside the Ray task-runner process: defer a boundary save, let `_validate()` return the in-memory CAR-dev metrics, then call the original save only on strict improvement. This avoids copying the full upstream training loop while preserving all optimizer/rollout behavior.
+- Installed veRL's `verl.model_merger` natively detects LoRA parameters and writes `lora_adapter/adapter_config.json` plus `adapter_model.safetensors`, so F10/F11 adapter export should use that supported path rather than a custom tensor extractor.
+- The installed veRL FSDP checkpoint manager also supports `actor_rollout_ref.actor.checkpoint.save_lora_only=true`. It saves only LoRA model tensors while retaining optimizer and RNG/LR-scheduler state, and the load path auto-detects LoRA-only state dicts with `strict=False`. This remains a fully resumable project checkpoint but reduces the model shard from about 30.8 GB to roughly 150--200 MiB; it is a better fit than continuing full-base checkpoint writes for F11--F14.
+- Upstream generated YAML does not expose `save_lora_only`, but the installed `CheckpointConfig` dataclass includes the field. The project should add it with Hydra's `+actor_rollout_ref.actor.checkpoint.save_lora_only=true` override and verify resolved config plus an exact-model save/load smoke before F11.
+- Archived F10 step 50 and SSD step 250 each have the same 11-file resumable schema and `31,443,788,637` bytes. Step 50 is the earliest tied maximum (`0.269231` at steps 50 and 150); step 250 scored `0.230769` and is not selected.
 # 2026-09-01 F10 pilot route decision
 
 - F02 was not merely paused: data job `133301`, smoke `133303`, full SFT `133306`, and G04 `133308` all completed. G04 produced a valid scientific FAIL.

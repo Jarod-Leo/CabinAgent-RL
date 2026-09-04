@@ -9,11 +9,11 @@ experiment="$1"
 phase="$2"
 requested_run_id="${3:-}"
 case "$experiment" in
-  f10) config="configs/train/fallback_ablations/vanilla.yaml" ;;
-  f11) config="configs/train/fallback_ablations/turn_discount.yaml" ;;
-  f12) config="configs/train/fallback_ablations/lata.yaml" ;;
-  f13) config="configs/train/fallback_ablations/prm_lite.yaml" ;;
-  f14) config="configs/train/fallback_ablations/prm_lite_lata.yaml" ;;
+  f10) config="configs/train/fallback_ablations/vanilla.yaml"; best_checkpoint_enabled=0 ;;
+  f11) config="configs/train/fallback_ablations/turn_discount.yaml"; best_checkpoint_enabled=1 ;;
+  f12) config="configs/train/fallback_ablations/lata.yaml"; best_checkpoint_enabled=1 ;;
+  f13) config="configs/train/fallback_ablations/prm_lite.yaml"; best_checkpoint_enabled=1 ;;
+  f14) config="configs/train/fallback_ablations/prm_lite_lata.yaml"; best_checkpoint_enabled=1 ;;
   *) echo "Unknown fallback ablation: $experiment" >&2; exit 2 ;;
 esac
 PROJECT_ROOT="${PROJECT_ROOT:-/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL}"
@@ -41,7 +41,7 @@ case "$phase" in
   *) echo "Unknown phase: $phase" >&2; exit 2 ;;
 esac
 mkdir -p logs/slurm
-exports="ALL,PROJECT_ROOT=$PROJECT_ROOT,ARCHIVE_ROOT=$ARCHIVE_ROOT,GPU_ENV=$GPU_ENV,PYTHON_BIN=$PYTHON_BIN,EXPERIMENT_CONFIG=$config,RUN_ID=$run_id,MAX_TRAINING_STEPS=$target_steps,SAVE_FREQ=50,EVAL_FREQ=50,MAX_ACTOR_CKPT_TO_KEEP=1,MAX_CRITIC_CKPT_TO_KEEP=1,MAX_INFRA_RESTARTS=2,POLICY_MODEL_PATH=$POLICY_MODEL_PATH,SIMULATOR_MODEL_PATH=$SIMULATOR_MODEL_PATH,SIMULATOR_GPU_MEMORY_UTILIZATION=${SIMULATOR_GPU_MEMORY_UTILIZATION:-0.86},ROLLOUT_GPU_MEMORY_UTILIZATION=${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.60},ROLLOUT_MAX_NUM_SEQS=${ROLLOUT_MAX_NUM_SEQS:-16},ROLLOUT_MAX_NUM_BATCHED_TOKENS=${ROLLOUT_MAX_NUM_BATCHED_TOKENS:-16384},ROLLOUT_AGENT_WORKERS=${ROLLOUT_AGENT_WORKERS:-16},PPO_MICRO_BATCH_SIZE_PER_GPU=${PPO_MICRO_BATCH_SIZE_PER_GPU:-1},ACTOR_PARAM_OFFLOAD=${ACTOR_PARAM_OFFLOAD:-true},ACTOR_OPTIMIZER_OFFLOAD=${ACTOR_OPTIMIZER_OFFLOAD:-true},REF_PARAM_OFFLOAD=${REF_PARAM_OFFLOAD:-true},USE_REMOVE_PADDING=${USE_REMOVE_PADDING:-true},ENTROPY_FROM_LOGITS_WITH_CHUNKING=${ENTROPY_FROM_LOGITS_WITH_CHUNKING:-true},ENTROPY_FROM_LOGITS_CHUNK_SIZE=${ENTROPY_FROM_LOGITS_CHUNK_SIZE:-2048}"
+exports="ALL,PROJECT_ROOT=$PROJECT_ROOT,ARCHIVE_ROOT=$ARCHIVE_ROOT,GPU_ENV=$GPU_ENV,PYTHON_BIN=$PYTHON_BIN,EXPERIMENT_CONFIG=$config,RUN_ID=$run_id,MAX_TRAINING_STEPS=$target_steps,SAVE_FREQ=50,EVAL_FREQ=50,MAX_ACTOR_CKPT_TO_KEEP=1,MAX_CRITIC_CKPT_TO_KEEP=1,MAX_INFRA_RESTARTS=2,CABIN_BEST_CHECKPOINT_ENABLED=$best_checkpoint_enabled,CABIN_BEST_CHECKPOINT_METRIC=val-core/car_bench/reward/mean@1,WANDB_RUN_ID=$run_id,WANDB_RESUME=allow,POLICY_MODEL_PATH=$POLICY_MODEL_PATH,SIMULATOR_MODEL_PATH=$SIMULATOR_MODEL_PATH,SIMULATOR_GPU_MEMORY_UTILIZATION=${SIMULATOR_GPU_MEMORY_UTILIZATION:-0.86},ROLLOUT_GPU_MEMORY_UTILIZATION=${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.60},ROLLOUT_MAX_NUM_SEQS=${ROLLOUT_MAX_NUM_SEQS:-16},ROLLOUT_MAX_NUM_BATCHED_TOKENS=${ROLLOUT_MAX_NUM_BATCHED_TOKENS:-16384},ROLLOUT_AGENT_WORKERS=${ROLLOUT_AGENT_WORKERS:-16},PPO_MICRO_BATCH_SIZE_PER_GPU=${PPO_MICRO_BATCH_SIZE_PER_GPU:-1},ACTOR_PARAM_OFFLOAD=${ACTOR_PARAM_OFFLOAD:-true},ACTOR_OPTIMIZER_OFFLOAD=${ACTOR_OPTIMIZER_OFFLOAD:-true},REF_PARAM_OFFLOAD=${REF_PARAM_OFFLOAD:-true},USE_REMOVE_PADDING=${USE_REMOVE_PADDING:-true},ENTROPY_FROM_LOGITS_WITH_CHUNKING=${ENTROPY_FROM_LOGITS_WITH_CHUNKING:-true},ENTROPY_FROM_LOGITS_CHUNK_SIZE=${ENTROPY_FROM_LOGITS_CHUNK_SIZE:-2048}"
 job_id="$(sbatch --parsable --time=24:00:00 --job-name="car-${experiment}-full" --export="$exports" scripts/slurm_fallback_grpo.sbatch)"
 [[ -n "$job_id" ]] || { echo "Empty fallback ablation Job ID" >&2; exit 1; }
 "$PYTHON_BIN" -B scripts/update_experiment_manifest.py --run-id "$run_id" --status submitted --slurm-job-id "$job_id"
