@@ -2,7 +2,7 @@
 
 ## 状态
 
-进行中：F10 已完成 250 steps并回填 W&B；按严格提升/同分留早规则选中 step 50。F11 Turn-Discount 的训练内 best-checkpoint 与 LoRA-only 可恢复存储已通过本地回归，等待远端 pre-flight 与 F10 adapter 导出验证。
+进行中：F10 最佳adapter已导出验证，完整checkpoint经授权清理；F11 Job140302在首次保存OOM。已恢复原生保存顺序，save smoke140549验证中，随后独立resume，再正式重跑。
 
 ## 目标
 
@@ -32,7 +32,7 @@
 | Policy LoRA | rank/alpha `32/32` |
 | Simulator | 固定 72B-AWQ vLLM，不训练 |
 | 训练长度 | 最多 250 steps |
-| Checkpoint/eval | 50、100、150、200、250 训练内评测；step 0 不参选，CAR dev mean@1 严格提升才保存，同分留早；训练期仅 1 个 LoRA-only 可恢复 checkpoint |
+| Checkpoint/eval | 50、100、150、200、250 全部保存并评测；原生sync保存边界，训练期保留五个LoRA-only恢复点，latest恢复；step0不参选，dev最高/同分留早，结束后清理非最佳 |
 | Turn discount alpha | `1.05` |
 | PRM-Lite range | clip 到 `[-0.5, 0.5]` |
 | Process weight | `0.3` |
@@ -965,3 +965,17 @@
 - 恢复原生save时点，在on_step_end唤醒rollout前同步保存；staging完整验证后rename+原子latest marker。验证只记录分数，不保存/删除。
 - 用户批准每50steps保留全部五个LoRA-only恢复点，latest用于resume，dev best用于最终评测，同分留早，下一实验前清理。替代旧三份上限/只存best契约。
 - 本地52tests通过；先独立1-step save + 跨作业resume到2 smoke，验证真实大小、加载model/optimizer/RNG和再次保存，再250-step新run。
+
+### F11 checkpoint save smoke / Job140549
+
+#### 实验设置
+- commit38b255c，run f11_checkpoint_smoke_20260905_r1，1step/save1/eval1；其余F11科学设置与caps不变；同节点2xhighmem Pro6000、2h。
+
+#### 执行结果
+- 本地与远端52tests、Bash检查PASS；Job140549已提交，等待GPU结果。
+
+#### 改进原因
+- 在短作业覆盖原失败的save边界，避免训练50steps才发现保存问题。
+
+#### 改进措施
+- 要求checkpoint完整、实际大小合理、dev记录与latest一致；PASS后独立resume至step2，随后正式250step新run。

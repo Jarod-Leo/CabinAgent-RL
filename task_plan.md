@@ -8,7 +8,7 @@ Complete the fallback-GRPO ablation sequence reproducibly. The active objective 
 
 - Preserve F10's honest Slurm history and select step 50 as its earliest tied best CAR-dev checkpoint (`0.269231`).
 - Export the F10 step-50 actor LoRA through the installed veRL converter and validate parent+adapter loading before proposing exact full-checkpoint deletion targets.
-- Implement best-checkpoint selection for F11: validate in memory every 50 steps, save only strict improvements, and keep the earlier checkpoint on ties.
+- F11 revised contract: save every50 before waking rollout; keep five LoRA-only recovery points, resume latest, select dev best with earlier ties, and prune only after final review.
 - Keep step 0 as a reported baseline but exclude it from trained-checkpoint selection.
 - Run local and remote tests, live cluster/storage pre-flight, W&B verification, and Slurm test-only before submitting F11.
 - Submit no F12 successor; F11 completion requires manual review and full stage documentation.
@@ -42,9 +42,9 @@ Complete the fallback-GRPO ablation sequence reproducibly. The active objective 
 |---|---|---|
 | Freeze selection/storage contract | complete | CAR dev mean@1 at 50-step boundaries; strict improvement only; ties keep earlier; step 0 excluded; completed runs retain validated LoRA adapter rather than full optimizer checkpoint. |
 | Implement best-checkpoint tooling | complete | Local and remote 51 tests, compile, Ray actor import, Hydra resolution, and scheduler validation PASS. |
-| Export F10 selected adapter | complete | Job `140039` completed; 161.5 MB rank-32 adapter inventory and parent+adapter CUDA generation PASS. Exact full-checkpoint deletion approval is now pending. |
+| Export F10 selected adapter | complete | Job140039 PASS; both full checkpoints deleted with approval. Adapter retained. |
 | Remote pre-flight | complete | Live Slurm/QoS/GPU/storage/W&B state, tests, Bash, Hydra resolved config, imports, and both Slurm test-only checks pass. |
-| Submit F11 | pending | One 250-step job, same physical node 2x Pro 6000, Turn-Discount alpha 1.05, 50-step dev validation, console+W&B, no F12 successor. |
+| Submit F11 | in_progress | Job140302 failed on save at50; repaired native save ordering, save/resume smoke140549 underway before formal retry. |
 | Monitor and close F11 | pending | 250/250 or honest failed attempt; best-step history, gradients, GPU telemetry, adapter export, stage docs, and GitHub sync complete. |
 
 ## Current F02/G04 Attempt

@@ -59,6 +59,7 @@
 | F10-ADAPTER-EXPORT | 1 | complete | archived F10 step50 LoRA export + parent/adapter GPU load validation | 140039 | 0 | 0.269231 selected | - | - | reports/cluster/F10-ADAPTER-140039/f10-best-adapter-140039.json | COMPLETED 3m30s; rank32 392 tensors/161.5MB; hash + CUDA generation PASS |
 | F10-CLEANUP | 1 | complete | user-approved full step50 HDD and step250 SSD deletion | - | - | - | - | 62,887,577,274 bytes removed | preserved best adapter | SSD14.0GB/HDD72.3GB; full training state permanently removed |
 | F11 | 1 | failed | corrected F01 merged parent + fresh rank32 RL LoRA | 140302 | 50/250 | 0.269231 | - | - | experiments/f11_formal_20260905_stage20 | 2h19m18s; save-after-validation OOM; no checkpoint; regular metrics through49 |
+| F11-SAVE-SMOKE | 1 | queued | pre-rollout atomic save; retain all | 140549 | 0/1 | - | - | - | experiments/f11_checkpoint_smoke_20260905_r1 | commit38b255c; same-node2xPro6000; save1/eval1 |
 | F12 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | LATA; awaiting post-F10 human gate |
 | F13 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite; awaiting post-F10 human gate |
 | F14 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite + LATA; awaiting post-F10 human gate |
