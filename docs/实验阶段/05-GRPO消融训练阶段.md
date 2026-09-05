@@ -972,10 +972,25 @@
 - commit38b255c，run f11_checkpoint_smoke_20260905_r1，1step/save1/eval1；其余F11科学设置与caps不变；同节点2xhighmem Pro6000、2h。
 
 #### 执行结果
-- 本地与远端52tests、Bash检查PASS；Job140549已提交，等待GPU结果。
+- Job140549 COMPLETED/0:0，gpu-pro6000-7，11m12s；step1保存1.9279s，无OOM；完整11文件980,828,869bytes（0.981GB），series_verified，latest=1。baseline/dev=0.230769/0.269231，只作系统验证。
+- W&B退出出现非致命atexit BrokenPipe；API已核对state=finished、step=1、dev=0.269231、save_seconds=1.9279，在线同步成功。
 
 #### 改进原因
 - 在短作业覆盖原失败的save边界，避免训练50steps才发现保存问题。
 
 #### 改进措施
 - 要求checkpoint完整、实际大小合理、dev记录与latest一致；PASS后独立resume至step2，随后正式250step新run。
+
+### F11 checkpoint resume smoke / Job140696
+
+#### 实验设置
+- 同run f11_checkpoint_smoke_20260905_r1，从step1恢复至step2，save1/eval1；同节点2xPro6000、2h，模型/数据/科学参数冻结。
+
+#### 执行结果
+- Job140696已提交；先完成latest=1且schema完整的只读audit，等待GPU恢复结果。
+
+#### 改进原因
+- LoRA-only保存成功不等于恢复成功；需独立进程验证model/optimizer/extra状态加载与继续更新。
+
+#### 改进措施
+- 验收step2完成、两个完整checkpoint保留、latest=2、dev best独立记录；通过后正式F11从父模型新建run，不继承smoke权重。

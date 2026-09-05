@@ -722,7 +722,9 @@
 
 ### 2026-09-05: F11 save OOM remediation
 
+- GPU保存Job140549通过，W&B API确认step1与save_seconds=1.9279已同步；独立恢复Job140696已提交，从step1恢复至step2。真实checkpoint模型state为323.1MB、optimizer646.3MB，总0.981GB；五份约4.90GB。
+
 - Job140302 FAILED/15:0，gpu-pro6000-7，2h19m18s；执行到 step50 并完成 dev=0.269231，与 baseline 持平。保存前 load_fsdp_model_to_gpu 申请890MiB、仅338MiB空闲；rollout进程占58.36GiB。无完整checkpoint，常规metrics到49。
 - 根因：自定义延迟save移到validate内、rollout已唤醒；恢复原生sync顺序（on_sample_end sleep -> update actor -> save -> on_step_end wake -> validate）。无需新增sleep或修改FSDP底层。
-- 远端52tests和Bash检查PASS，SSD14.1/150GB；修复commit38b255c。独立save smoke Job140549已提交，run f11_checkpoint_smoke_20260905_r1，1step/save1/eval1，同节点双卡2h。成功后单独resume到step2；正式run尚未重提。
+- 远端52tests和Bash检查PASS，SSD14.1/150GB；修复commit38b255c。独立save smoke Job140549已COMPLETED/0:0，11m12s；step1保存1.93s，11文件980,828,869bytes，series_verified，无OOM。下一步独立resume到step2；正式run尚未重提。
 - 新契约：每50steps全存、保留五个，最新恢复，最佳分数独立记录；原子staging发布和latest marker，写入失败保留旧恢复点，结束后人工验收最佳再清理。52 tests PASS（首次Windows临时目录权限失败，正常权限重跑通过）。GPU save/resume smoke待执行，正式run尚未重提。
