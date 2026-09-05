@@ -17,7 +17,8 @@
 - Active storage root: project SSD `/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL`；cold archive root: project HDD `/projects/cabinagentrlarchive`。不可变模型可在计算节点通过显式 HDD 路径直接加载；checkpoint、环境、缓存、训练数据和实时日志保留在 SSD。
 - 正式消融完整保留五组：Vanilla、Turn-Discount、LATA、PRM-Lite、PRM-Lite + LATA。
 - 实验跟踪使用 W&B project `CabinAgent-RL`：只上传训练/评测数值指标与非敏感配置，不上传原始对话、tool outputs、checkpoint 或凭据；F10 console 历史已回填，后续实验使用 console + W&B 实时双写。
-- F11--F14 在训练作业内每 50 steps 用 CAR dev mean@1 选择 checkpoint：step 0 只作 baseline；只有严格提升才保存并替换，同分保留更早 step。训练期保存 LoRA-only model state + optimizer/RNG 以保持可恢复；完成后仅归档验证通过的 actor LoRA、配置、指标和清单。
+- F11--F14 每 50 steps 在原生 sync pre-rollout 边界保存 LoRA-only model + optimizer/RNG，再运行 CAR dev 验证。训练期保留 50/100/150/200/250 五个恢复点（替代旧最多三个/只留最佳规则），中断从最新完整点恢复；step0 仅 baseline，best 同分留早。下一实验前验证最佳产物并清理非最佳 checkpoint。
+- Job 140302 在 step50 验证后保存 OOM，无 checkpoint；修复恢复原生保存顺序并原子发布完整目录。先独立单-step save、跨作业 resume 到 step2 smoke，PASS 后新 run 重跑 F11 250 steps。
 
 ## 2. 主流程
 

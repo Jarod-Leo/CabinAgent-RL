@@ -126,14 +126,14 @@ class StorageManagementTests(unittest.TestCase):
         self.assertIn("target_steps=250", submitter)
         self.assertIn("SAVE_FREQ=50", submitter)
         self.assertIn("EVAL_FREQ=50", submitter)
-        self.assertIn("--time=24:00:00", submitter)
+        self.assertIn("time_limit=24:00:00", submitter)
         self.assertNotIn("NEXT_TRAINING_STAGE", submitter)
         self.assertIn("#SBATCH --nodes=1", slurm)
         self.assertIn("#SBATCH --gres=gpu:pro6000:2", slurm)
         self.assertIn("#SBATCH --requeue", slurm)
         self.assertIn("restart-${restart_count}.done", slurm)
         self.assertIn("--ntasks=2 --gpus-per-task=1 --gpu-bind=single:1", slurm)
-        self.assertIn("checkpoint_args=(audit-best", slurm)
+        self.assertIn("checkpoint_args=(audit-series", slurm)
         self.assertIn("checkpoint_args=(prune", slurm)
 
 

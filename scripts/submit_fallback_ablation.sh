@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
-  echo "Usage: $0 <f10|f11|f12|f13|f14> <start|resume> [run-id]" >&2
+  echo "Usage: $0 <f10|f11|f12|f13|f14> <start|resume|smoke-start|smoke-resume> [run-id]" >&2
   exit 2
 fi
 experiment="$1"
@@ -23,6 +23,17 @@ PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"
 POLICY_MODEL_PATH="${POLICY_MODEL_PATH:-$ARCHIVE_ROOT/models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901}"
 SIMULATOR_MODEL_PATH="${SIMULATOR_MODEL_PATH:-$ARCHIVE_ROOT/models/Qwen/Qwen2.5-72B-Instruct-AWQ}"
 target_steps=250
+save_interval=50
+time_limit=24:00:00
+if [[ "$phase" == smoke-* ]]; then
+  [[ "$experiment" == f11 ]] || { echo "Checkpoint smoke is F11-only" >&2; exit 2; }
+  [[ "$requested_run_id" == f11_checkpoint_smoke_* ]] || { echo "Use a dedicated smoke run-id" >&2; exit 2; }
+  target_steps=1
+  [[ "$phase" != smoke-resume ]] || target_steps=2
+  save_interval=1
+  time_limit=02:00:00
+  phase="${phase#smoke-}"
+fi
 cd "$PROJECT_ROOT"
 [[ -x "$PYTHON_BIN" ]] || { echo "Project Python is missing: $PYTHON_BIN" >&2; exit 1; }
 [[ -d "$POLICY_MODEL_PATH" ]] || { echo "HDD policy parent is missing: $POLICY_MODEL_PATH" >&2; exit 1; }
@@ -42,7 +53,8 @@ case "$phase" in
 esac
 mkdir -p logs/slurm
 exports="ALL,PROJECT_ROOT=$PROJECT_ROOT,ARCHIVE_ROOT=$ARCHIVE_ROOT,GPU_ENV=$GPU_ENV,PYTHON_BIN=$PYTHON_BIN,EXPERIMENT_CONFIG=$config,RUN_ID=$run_id,MAX_TRAINING_STEPS=$target_steps,SAVE_FREQ=50,EVAL_FREQ=50,MAX_ACTOR_CKPT_TO_KEEP=1,MAX_CRITIC_CKPT_TO_KEEP=1,MAX_INFRA_RESTARTS=2,CABIN_BEST_CHECKPOINT_ENABLED=$best_checkpoint_enabled,CABIN_BEST_CHECKPOINT_METRIC=val-core/car_bench/reward/mean@1,WANDB_RUN_ID=$run_id,WANDB_RESUME=allow,POLICY_MODEL_PATH=$POLICY_MODEL_PATH,SIMULATOR_MODEL_PATH=$SIMULATOR_MODEL_PATH,SIMULATOR_GPU_MEMORY_UTILIZATION=${SIMULATOR_GPU_MEMORY_UTILIZATION:-0.86},ROLLOUT_GPU_MEMORY_UTILIZATION=${ROLLOUT_GPU_MEMORY_UTILIZATION:-0.60},ROLLOUT_MAX_NUM_SEQS=${ROLLOUT_MAX_NUM_SEQS:-16},ROLLOUT_MAX_NUM_BATCHED_TOKENS=${ROLLOUT_MAX_NUM_BATCHED_TOKENS:-16384},ROLLOUT_AGENT_WORKERS=${ROLLOUT_AGENT_WORKERS:-16},PPO_MICRO_BATCH_SIZE_PER_GPU=${PPO_MICRO_BATCH_SIZE_PER_GPU:-1},ACTOR_PARAM_OFFLOAD=${ACTOR_PARAM_OFFLOAD:-true},ACTOR_OPTIMIZER_OFFLOAD=${ACTOR_OPTIMIZER_OFFLOAD:-true},REF_PARAM_OFFLOAD=${REF_PARAM_OFFLOAD:-true},USE_REMOVE_PADDING=${USE_REMOVE_PADDING:-true},ENTROPY_FROM_LOGITS_WITH_CHUNKING=${ENTROPY_FROM_LOGITS_WITH_CHUNKING:-true},ENTROPY_FROM_LOGITS_CHUNK_SIZE=${ENTROPY_FROM_LOGITS_CHUNK_SIZE:-2048}"
-job_id="$(sbatch --parsable --time=24:00:00 --job-name="car-${experiment}-full" --export="$exports" scripts/slurm_fallback_grpo.sbatch)"
+exports="${exports/SAVE_FREQ=50,EVAL_FREQ=50/SAVE_FREQ=$save_interval,EVAL_FREQ=$save_interval}"
+job_id="$(sbatch --parsable --time="$time_limit" --job-name="car-${experiment}-full" --export="$exports" scripts/slurm_fallback_grpo.sbatch)"
 [[ -n "$job_id" ]] || { echo "Empty fallback ablation Job ID" >&2; exit 1; }
 "$PYTHON_BIN" -B scripts/update_experiment_manifest.py --run-id "$run_id" --status submitted --slurm-job-id "$job_id"
 printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "continuous-$phase" "$job_id" "$target_steps" >>"experiments/$run_id/submissions.tsv"

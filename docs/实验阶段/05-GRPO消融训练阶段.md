@@ -948,3 +948,20 @@
 
 #### 改进措施
 - 执行代码保持冻结，检查训练曲线、梯度、显存与 best selection；完成后记录最终状态，再讨论后续实验，无 F12 自动 successor。
+
+### F11 Job140302 final and save repair / 2026-09-05
+
+#### 实验设置
+- 同上Job140302，50-step首次边界；新修复不改变模型、数据、seed、LR、advantage、caps。
+
+#### 执行结果
+- FAILED/15:0，2h19m18s，gpu-pro6000-7双卡；step50 dev=0.269231，baseline相同；无checkpoint文件，best=null/pending=50，普通step日志至49。
+- 保存时load_fsdp_model_to_gpu OOM：需890MiB、空闲337.94MiB；另rollout进程58.36GiB。历史日志保持原样。
+
+#### 改进原因
+- 代码时序缺陷：延迟save在validate后执行，越过原生sync的rollout休眠窗口；并非磁盘不足。
+
+#### 改进措施
+- 恢复原生save时点，在on_step_end唤醒rollout前同步保存；staging完整验证后rename+原子latest marker。验证只记录分数，不保存/删除。
+- 用户批准每50steps保留全部五个LoRA-only恢复点，latest用于resume，dev best用于最终评测，同分留早，下一实验前清理。替代旧三份上限/只存best契约。
+- 本地52tests通过；先独立1-step save + 跨作业resume到2 smoke，验证真实大小、加载model/optimizer/RNG和再次保存，再250-step新run。

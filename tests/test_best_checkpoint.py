@@ -1,99 +1,97 @@
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
 
-from src.training.best_checkpoint import BestCheckpointController, candidate_is_better
-
+from scripts.checkpoint_policy import REQUIRED_RELATIVE_FILES, audit_series
+from src.training.best_checkpoint import BestCheckpointController
 
 METRIC = "val-core/car_bench/reward/mean@1"
 
 
 class FakeTrainer:
-    def __init__(self) -> None:
-        trainer = SimpleNamespace(
-            save_freq=50,
-            test_freq=50,
-            default_local_dir="experiments/test-best/checkpoints",
-            v1=SimpleNamespace(trainer_mode="sync"),
-        )
-        self.config = SimpleNamespace(trainer=trainer)
+    def __init__(self, root):
+        self.config = SimpleNamespace(trainer=SimpleNamespace(
+            save_freq=50, test_freq=50, default_local_dir=str(root / "checkpoints"),
+            v1=SimpleNamespace(trainer_mode="sync")))
         self.global_steps = 0
-        self.saved_steps = []
-        self.validation_score = 0.20
+        self.score = .2
+        self.fail_save = False
+        self.fail_validation = False
+        self.rollout_awake = False
 
-    def _save_checkpoint(self) -> None:
-        self.saved_steps.append(self.global_steps)
+    def _save_checkpoint(self):
+        if self.rollout_awake:
+            raise RuntimeError("Saving while rollout is awake reproduces OOM")
+        root = Path(self.config.trainer.default_local_dir)
+        for name in REQUIRED_RELATIVE_FILES:
+            path = root / f"global_step_{self.global_steps}" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"fixture")
+        if self.fail_save:
+            raise RuntimeError("Injected interrupted save")
+        (root / "latest_checkpointed_iteration.txt").write_text(str(self.global_steps))
 
-    def _validate(self) -> dict[str, float]:
-        return {METRIC: self.validation_score}
+    def _validate(self):
+        self.rollout_awake = True
+        if self.fail_validation:
+            raise RuntimeError("Injected validation failure")
+        return {METRIC: self.score}
 
 
 class BestCheckpointTests(unittest.TestCase):
-    def test_strict_improvement_keeps_earlier_tie(self) -> None:
-        self.assertTrue(candidate_is_better(0.2, None))
-        self.assertFalse(candidate_is_better(0.2, {"step": 50, "score": 0.2}))
-        self.assertTrue(candidate_is_better(0.21, {"step": 50, "score": 0.2}))
+    def test_all_boundaries_saved_and_best_ties_keep_earlier(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            t = FakeTrainer(root)
+            c = BestCheckpointController(t)
+            c.install()
+            t._validate()
+            for step, score in [(50, .2), (100, .2), (150, .3), (200, .1), (250, .3)]:
+                t.global_steps, t.score, t.rollout_awake = step, score, False
+                t._save_checkpoint()
+                self.assertTrue((root / "checkpoints" / f"global_step_{step}").exists())
+                t._validate()
+            result = audit_series(root, 250)
+            self.assertEqual(len(result["checkpoints"]), 5)
+            self.assertEqual(c.state["best"], {"step": 150, "score": .3})
+            self.assertEqual(result["marker_step"], 250)
 
-    @patch("src.training.best_checkpoint.prune_run")
-    @patch("src.training.best_checkpoint.validate_checkpoint")
-    @patch("src.training.best_checkpoint.write_state")
-    @patch("src.training.best_checkpoint.load_state")
-    def test_validate_before_conditional_save(
-        self,
-        load_state_mock: Mock,
-        write_state_mock: Mock,
-        validate_checkpoint_mock: Mock,
-        prune_run_mock: Mock,
-    ) -> None:
-        load_state_mock.return_value = {
-            "schema_version": 1,
-            "metric_key": METRIC,
-            "comparison": "strict_greater",
-            "tie_break": "earlier",
-            "baseline": None,
-            "best": None,
-            "pending_candidate": None,
-            "history": [],
-        }
-        trainer = FakeTrainer()
-        controller = BestCheckpointController(
-            trainer,
-            metric_key=METRIC,
-            state_path=Path("unused-best-state.json"),
-        )
-        controller.install()
+    def test_save_failure_preserves_previous_marker_and_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            t = FakeTrainer(root)
+            c = BestCheckpointController(t)
+            c.install()
+            t.global_steps = 50
+            t._save_checkpoint()
+            t._validate()
+            t.global_steps, t.rollout_awake, t.fail_save = 100, False, True
+            with self.assertRaises(RuntimeError):
+                t._save_checkpoint()
+            self.assertEqual(t.config.trainer.default_local_dir, str(root / "checkpoints"))
+            self.assertEqual((root / "checkpoints/latest_checkpointed_iteration.txt").read_text().strip(), "50")
+            self.assertFalse((root / "checkpoints/global_step_100").exists())
 
-        trainer._validate()
-        self.assertEqual(trainer.saved_steps, [])
-        self.assertEqual(controller.state["baseline"], {"step": 0, "score": 0.2})
-
-        trainer.global_steps = 50
-        trainer._save_checkpoint()
-        self.assertEqual(trainer.saved_steps, [])
-        metrics = trainer._validate()
-        self.assertEqual(trainer.saved_steps, [50])
-        self.assertEqual(metrics["checkpoint-selection/selected"], 1.0)
-
-        trainer.global_steps = 100
-        trainer.validation_score = 0.20
-        trainer._save_checkpoint()
-        trainer._validate()
-        self.assertEqual(trainer.saved_steps, [50])
-
-        trainer.global_steps = 150
-        trainer.validation_score = 0.25
-        trainer._save_checkpoint()
-        trainer._validate()
-        self.assertEqual(trainer.saved_steps, [50, 150])
-        self.assertEqual(controller.state["best"], {"step": 150, "score": 0.25})
-        self.assertEqual(
-            [row["selected"] for row in controller.state["history"]],
-            [True, False, True],
-        )
-        self.assertEqual(validate_checkpoint_mock.call_count, 2)
-        self.assertEqual(prune_run_mock.call_count, 2)
-        self.assertGreaterEqual(write_state_mock.call_count, 6)
+    def test_saved_state_survives_validation_failure_and_resume(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            t = FakeTrainer(root)
+            c = BestCheckpointController(t)
+            c.install()
+            t.global_steps, t.fail_validation = 50, True
+            t._save_checkpoint()
+            with self.assertRaises(RuntimeError):
+                t._validate()
+            resumed = FakeTrainer(root)
+            resumed.global_steps = 50
+            resumed_controller = BestCheckpointController(resumed)
+            resumed_controller.install()
+            resumed._validate()
+            self.assertEqual(resumed_controller.state["best"]["step"], 50)
+            resumed.score = .9
+            resumed._validate()
+            self.assertEqual(resumed_controller.state["best"]["score"], .2)
 
 
 if __name__ == "__main__":

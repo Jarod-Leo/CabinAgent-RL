@@ -140,6 +140,22 @@ def audit_best_run(run_dir: Path) -> dict[str, object]:
     return {**audit, "best_checkpoint_state": state, "status": "best_checkpoint_verified"}
 
 
+def audit_series(run_dir: Path, expected_step: int, interval: int = 50) -> dict[str, object]:
+    audit = audit_run(run_dir, expected_step)
+    state = json.loads((run_dir / "metrics" / "best_checkpoint.json").read_text(encoding="utf-8"))
+    expected = set(range(interval, expected_step + 1, interval)) | {expected_step}
+    actual = {int(row["step"]) for row in audit["checkpoints"]}
+    history = state.get("history", [])
+    if state.get("schema_version") != 2 or actual != expected or audit["incomplete_checkpoints"]:
+        raise ValueError("Incomplete checkpoint series")
+    if {int(row["step"]) for row in history} != expected:
+        raise ValueError("Missing validation scores for checkpoint series")
+    best = min(history, key=lambda row: (-float(row["score"]), int(row["step"])))
+    if state.get("best") != best:
+        raise ValueError("Incorrect best-checkpoint selection")
+    return {**audit, "best_checkpoint_state": state, "status": "series_verified"}
+
+
 def write_json(path: Path | None, value: dict[str, object]) -> None:
     payload = json.dumps(value, indent=2, sort_keys=True) + "\n"
     if path is None:
@@ -153,14 +169,19 @@ def write_json(path: Path | None, value: dict[str, object]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("audit", "prune", "audit-best"))
+    parser.add_argument("mode", choices=("audit", "prune", "audit-best", "audit-series"))
+    parser.add_argument("--interval", type=int, default=50)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--expected-step", type=int)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--report")
     args = parser.parse_args()
     run_dir = ROOT / "experiments" / args.run_id
-    if args.mode == "audit":
+    if args.mode == "audit-series":
+        if not args.expected_step or args.interval <= 0:
+            parser.error("audit-series requires positive --expected-step and --interval")
+        result = audit_series(run_dir, args.expected_step, args.interval)
+    elif args.mode == "audit":
         result = audit_run(run_dir, expected_step=args.expected_step)
     elif args.mode == "audit-best":
         result = audit_best_run(run_dir)

@@ -64,7 +64,7 @@ run_status=$?
 set -e
 
 if [[ "$run_status" -eq 0 ]]; then
-  checkpoint_args=(audit-best --run-id "$RUN_ID")
+  checkpoint_args=(audit-series --run-id "$RUN_ID" --expected-step "$MAX_TRAINING_STEPS" --interval "${SAVE_FREQ:-50}")
   report_name="checkpoint-best-${SLURM_JOB_ID}.json"
   if [[ "${CABIN_BEST_CHECKPOINT_ENABLED:-0}" != "1" ]]; then
     checkpoint_args=(prune --run-id "$RUN_ID" --expected-step "$MAX_TRAINING_STEPS" --apply)
