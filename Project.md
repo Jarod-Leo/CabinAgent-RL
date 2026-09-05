@@ -1,8 +1,8 @@
 # Project.md: CabinAgent-RL
 
-**Version**: v0.9 F11 checkpoint save validated; resume queued
+**Version**: v0.9 F11 checkpoint save/resume validated
 
-最新验收：修复后的GPU保存Job140549已PASS，checkpoint0.981GB、保存1.93s；独立恢复Job140696排队，验证完成前不重提正式F11。训练期间保存全部五个恢复点的方案已实施。
+最新验收：GPU保存140549与独立恢复140696均PASS；完整checkpoint0.981GB，保存1.93/2.42s。正式F11 attempt2 Job140980已提交，run f11_formal_20260905_stage20_r2，从F01父模型新建LoRA，连续250steps、每50steps保存评测，保留五个恢复点，W&B实时记录。
 
 当前更新（2026-09-05）：用户批准的 F10 HDD step50 与 SSD step250 完整 checkpoint 已永久删除，最佳 adapter 和父模型保留；SSD/HDD 使用量为 14.0/72.3 GB。F11 Job `140302` 已提交，run `f11_formal_20260905_stage20`，连续 250 steps、每 50 steps dev 选择最佳、W&B 实时记录。
 **Updated**: 2026-09-05

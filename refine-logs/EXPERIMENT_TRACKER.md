@@ -60,7 +60,8 @@
 | F10-CLEANUP | 1 | complete | user-approved full step50 HDD and step250 SSD deletion | - | - | - | - | 62,887,577,274 bytes removed | preserved best adapter | SSD14.0GB/HDD72.3GB; full training state permanently removed |
 | F11 | 1 | failed | corrected F01 merged parent + fresh rank32 RL LoRA | 140302 | 50/250 | 0.269231 | - | - | experiments/f11_formal_20260905_stage20 | 2h19m18s; save-after-validation OOM; no checkpoint; regular metrics through49 |
 | F11-SAVE-SMOKE | 1 | complete | pre-rollout atomic save; retain all | 140549 | 1/1 | 0.269231 | grad0.228338 | save1.93s | experiments/f11_checkpoint_smoke_20260905_r1 | COMPLETED11m12s; 980828869bytes; series_verified; noOOM |
-| F11-RESUME-SMOKE | 1 | queued | resume step1 to2 | 140696 | 1/2 | - | - | - | experiments/f11_checkpoint_smoke_20260905_r1 | independent process load/save check |
+| F11-RESUME-SMOKE | 1 | complete | resume step1 to2 | 140696 | 2/2 | 0.269231 | grad9.11e-6 | save2.42s | experiments/f11_checkpoint_smoke_20260905_r1 | COMPLETED15m03s; LoRA/optim/RNG/scheduler loaded; two0.981GB checkpoints; latest2/best1 |
+| F11 | 2 | running | correctedF01 + fresh rank32; fixed pre-rollout save | 140980 | 0/250 | - | - | - | experiments/f11_formal_20260905_stage20_r2 | gpu-pro6000-9; save50/eval50; retain5; same-node2xPro6000; W&B |
 | F12 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | LATA; awaiting post-F10 human gate |
 | F13 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite; awaiting post-F10 human gate |
 | F14 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite + LATA; awaiting post-F10 human gate |

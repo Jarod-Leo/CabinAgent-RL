@@ -722,6 +722,12 @@
 
 ### 2026-09-05: F11 save OOM remediation
 
+- Job140980已在gpu-pro6000-9 RUNNING，同节点两块Pro6000，初始模型加载阶段；正式训练结果待产出。
+
+- save/resume验收记录完成后提交正式F11 attempt2 Job140980，run f11_formal_20260905_stage20_r2；250steps/save50/eval50、同节点2xhighmem Pro6000、24h、caps0.86/0.60；从F01父模型新建LoRA，不继承smoke。提交前SSD16.2/150GB、HDD72.3/250GB。执行代码冻结，等待训练结果。
+
+- 恢复Job140696已COMPLETED/0:0（gpu-pro6000-9，15m03s）：model/optimizer/RNG/LR scheduler加载成功，step2完成并保存2.42s，两个checkpoint完整各0.981GB，latest2/best1，series_verified。save/resume门禁闭合，下一步独立新run重跑正式F11 250steps。
+
 - GPU保存Job140549通过，W&B API确认step1与save_seconds=1.9279已同步；独立恢复Job140696已提交，从step1恢复至step2。真实checkpoint模型state为323.1MB、optimizer646.3MB，总0.981GB；五份约4.90GB。
 
 - Job140302 FAILED/15:0，gpu-pro6000-7，2h19m18s；执行到 step50 并完成 dev=0.269231，与 baseline 持平。保存前 load_fsdp_model_to_gpu 申请890MiB、仅338MiB空闲；rollout进程占58.36GiB。无完整checkpoint，常规metrics到49。

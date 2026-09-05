@@ -987,10 +987,26 @@
 - 同run f11_checkpoint_smoke_20260905_r1，从step1恢复至step2，save1/eval1；同节点2xPro6000、2h，模型/数据/科学参数冻结。
 
 #### 执行结果
-- Job140696已提交；先完成latest=1且schema完整的只读audit，等待GPU恢复结果。
+- Job140696 COMPLETED/0:0，gpu-pro6000-9，15m03s；日志确认加载392-key LoRA、optimizer、RNG和LR scheduler，完成step2并保存（2.4163s）。两个完整checkpoint各980,828,869bytes，latest=2，series_verified，无OOM。
+- step2 dev=0.269231，与原step1选择分数并列，best仍step1。恢复时重复验证step1得到0.307692，按冻结协议保留原选择分数；反映评测波动，不能作为性能提升。step2 grad norm=9.11e-6，系统恢复验收通过。
 
 #### 改进原因
 - LoRA-only保存成功不等于恢复成功；需独立进程验证model/optimizer/extra状态加载与继续更新。
 
 #### 改进措施
 - 验收step2完成、两个完整checkpoint保留、latest=2、dev best独立记录；通过后正式F11从父模型新建run，不继承smoke权重。
+
+### F11 formal attempt2 / Job140980
+
+#### 实验设置
+- 保存修复代码38b255c；run f11_formal_20260905_stage20_r2；F01合并父模型+fresh rank32/alpha32 LoRA，Turn-Discount1.05，CAR train/dev、seed42、4x4、LR1e-6冻结。
+- 同节点2xhighmem Pro6000，24h；250steps/save50/eval50，保留五份、latest恢复、best同分留早；caps0.86/0.60，console+W&B，无后续消融自动提交。
+
+#### 执行结果
+- Job140980已在gpu-pro6000-9 RUNNING，实际分配同节点2xPro6000，模型初始化中；提交前SSD16.2/150GB、HDD72.3/250GB。训练结果待产出。
+
+#### 改进原因
+- 保存140549及独立恢复140696均PASS，关闭原step50保存OOM的系统门禁。
+
+#### 改进措施
+- 新run从父模型开始，不继承失败run或smoke权重；执行代码冻结，按50-step边界记录完整checkpoint与dev成绩。

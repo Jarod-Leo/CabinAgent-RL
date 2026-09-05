@@ -44,7 +44,7 @@ Complete the fallback-GRPO ablation sequence reproducibly. The active objective 
 | Implement best-checkpoint tooling | complete | Local and remote 51 tests, compile, Ray actor import, Hydra resolution, and scheduler validation PASS. |
 | Export F10 selected adapter | complete | Job140039 PASS; both full checkpoints deleted with approval. Adapter retained. |
 | Remote pre-flight | complete | Live Slurm/QoS/GPU/storage/W&B state, tests, Bash, Hydra resolved config, imports, and both Slurm test-only checks pass. |
-| Submit F11 | in_progress | Job140302 failed on save at50; repaired native save ordering, save/resume smoke140549 underway before formal retry. |
+| Submit F11 | complete | Save140549 and resume140696 passed; formal retry140980 submitted for250steps with five recovery checkpoints. |
 | Monitor and close F11 | pending | 250/250 or honest failed attempt; best-step history, gradients, GPU telemetry, adapter export, stage docs, and GitHub sync complete. |
 
 ## Current F02/G04 Attempt
