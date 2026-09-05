@@ -919,3 +919,32 @@
 - 作业原子写入 adapter 目录，拒绝覆盖，并生成逐文件 SHA-256 manifest；只有 LoRA 结构检查和 parent+adapter GPU generation 均 PASS 才接受。
 - 完成后先追加最终结果；再向用户提供两个完整 checkpoint 的精确路径、文件数和字节数以取得单独删除确认。该 attempt 完成并记录前不提交 F11。
 - 最终验证已通过。HDD `global_step_50` 与 SSD `global_step_250` 当前各 11 files / `31,443,788,637` bytes，仍保持原样；等待用户对这两个 exact targets 的单独删除确认，F11 尚未提交。
+
+### F10 approved cleanup / 2026-09-05
+
+#### 实验设置
+- 用户明确授权删除 F10 HDD step50 与 SSD step250 两个完整目录；各 11 files / 31,443,788,637 bytes。
+
+#### 执行结果
+- 重新核对 canonical paths、文件数/大小、adapter PASS manifest、parent 存在后删除；两个目标均已不存在。SSD 14.0/150 GB，HDD 72.3/250 GB。
+
+#### 改进原因
+- 最佳 adapter 已验证，可支持后续评测；完成的 F10 不再保留完整训练状态。
+
+#### 改进措施
+- 最佳 adapter、父模型和日志保留；完整 optimizer/RNG 永久删除。清理完成，继续提交已批准的 F11。
+
+### F11 Turn-Discount / Job 140302
+
+#### 实验设置
+- 执行代码 commit 41e9dcd；run f11_formal_20260905_stage20；corrected-F01 parent + fresh rank32/alpha32 LoRA；CAR train/dev、seed42、4x4 rollout、Turn-Discount alpha1.05、LR 1e-6、250 steps；同节点 2x highmem Pro6000、24h，caps 0.86/0.60。
+- 每 50 steps dev mean@1 严格提升保存，同分留早，step0 不入选；LoRA-only 可恢复 checkpoint；console + W&B。
+
+#### 执行结果
+- Job 140302 已提交，manifest=submitted；尚无训练结果。输出 experiments/f11_formal_20260905_stage20。
+
+#### 改进原因
+- F10 完成后按五组消融路线检验 Turn-Discount；训练期选择最佳 checkpoint 控制存储。
+
+#### 改进措施
+- 执行代码保持冻结，检查训练曲线、梯度、显存与 best selection；完成后记录最终状态，再讨论后续实验，无 F12 自动 successor。

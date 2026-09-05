@@ -714,3 +714,8 @@
 - 单卡 highmem Pro 6000 adapter export/validation Job `140039` 已提交，当前 `PENDING (Priority)`；0 GPU time、0 文件变更。完成并记录其结果前不提交 F11。
 - Job `140039` 随后在 `gpu-pro6000-3` 运行 `00:03:30` 并 `COMPLETED/0:0`。导出 rank/alpha `32/32`、392 tensors 的 F10 step-50 actor LoRA；adapter 本体 `161,533,560` bytes，目录合计 `161,535,915` bytes，逐文件 SHA-256 与 parent+adapter CUDA one-token generation 均 PASS（峰值 `15,786,684,416` bytes）。
 - 两个完整 F10 checkpoint 仍原样保留：HDD step 50 与 SSD step 250 均为 11 files / `31,443,788,637` bytes。下一步按契约给出 exact paths 并等待用户单独确认删除；未经确认不清理、不提交 F11。
+
+### 2026-09-05: F10 approved cleanup
+
+- 用户明确授权后删除 HDD step 50 与 SSD step 250，各 11 files / 31,443,788,637 bytes；重新核对路径与 adapter PASS manifest 后执行，两个目标均已不存在。完整训练状态永久删除，最佳 adapter 与父模型保留。
+- 实时配额复核：SSD 14.0/150 GB，HDD 72.3/250 GB。F11 已提交 Job `140302`，run `f11_formal_20260905_stage20`，250 steps、每 50 steps dev、同节点 2x Pro6000、24h、W&B 实时记录。执行代码冻结至作业结束。

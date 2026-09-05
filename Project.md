@@ -1,6 +1,8 @@
 # Project.md: CabinAgent-RL
 
-**Version**: v0.9 F11 best-checkpoint preparation
+**Version**: v0.9 F11 launch preparation
+
+当前更新（2026-09-05）：用户批准的 F10 HDD step50 与 SSD step250 完整 checkpoint 已永久删除，最佳 adapter 和父模型保留；SSD/HDD 使用量为 14.0/72.3 GB。F11 Job `140302` 已提交，run `f11_formal_20260905_stage20`，连续 250 steps、每 50 steps dev 选择最佳、W&B 实时记录。
 **Updated**: 2026-09-05
 **Goal**: 基于 CAR-bench 与 BFCL，比较 Direct-Instruct 与 Minimal-SFT fallback 初始化，并构建可复现的智能座舱多轮工具 Agent 训练、消融、评测与部署闭环。
 

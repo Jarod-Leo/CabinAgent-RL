@@ -57,7 +57,8 @@
 | F10-WANDB-BACKFILL | 1 | complete | numeric-only merge of trainer logs 136868/137588/138821 | 2ut4t5d4 | 0--250 | 0.230769 final | 114/250 cumulative effective | 97 numeric metrics | W&B CabinAgent-RL/F10-Vanilla-seed42 | 251 history steps uploaded; no conversations, weights, checkpoints or credentials |
 | F11-TOOLING | 1 | complete | train-time CAR-dev strict-best selection; LoRA-only resumable checkpoint | - | 0/250 | - | - | - | local/remote source/tests | 51 tests + compile/Bash/Hydra/Ray/W&B/Slurm test-only PASS; step0 excluded, ties keep earlier |
 | F10-ADAPTER-EXPORT | 1 | complete | archived F10 step50 LoRA export + parent/adapter GPU load validation | 140039 | 0 | 0.269231 selected | - | - | reports/cluster/F10-ADAPTER-140039/f10-best-adapter-140039.json | COMPLETED 3m30s; rank32 392 tensors/161.5MB; hash + CUDA generation PASS |
-| F11 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | Turn-Discount; awaiting post-F10 human gate and W&B contract |
+| F10-CLEANUP | 1 | complete | user-approved full step50 HDD and step250 SSD deletion | - | - | - | - | 62,887,577,274 bytes removed | preserved best adapter | SSD14.0GB/HDD72.3GB; full training state permanently removed |
+| F11 | 1 | queued | corrected F01 merged parent + fresh rank32 RL LoRA | 140302 | 0/250 | - | - | - | experiments/f11_formal_20260905_stage20 | Turn-Discount alpha1.05; dev every50 strict best; W&B; same-node 2xPro6000 |
 | F12 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | LATA; awaiting post-F10 human gate |
 | F13 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite; awaiting post-F10 human gate |
 | F14 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite + LATA; awaiting post-F10 human gate |
