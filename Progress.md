@@ -2,6 +2,10 @@
 
 ### 2026-09-06：F11 完成与 F12 准备
 
+- F12 LATA正式Job142944已提交，run f12_formal_20260906_stage21，完整250steps/save50/eval50，同节点2xhighmem Pro6000、24h、W&B实时记录。F11保留最佳的audit-best成功，未改训练代码，未继承F11权重。
+
+- 后续更新：最佳adapter验收142938 COMPLETED/0:0，37秒，PASS；161.5MB、392 tensors，父模型+adapter生成成功。按已批准策略清理非最佳50/150/200/250（3,923,315,220bytes），保留完整step100及HDD adapter，latest指向100；下一项独立F12 LATA。
+
 - F11最佳adapter导出/真实父模型加载验证Job142938已提交，当前PENDING/Priority；单卡highmem Pro6000、2h，来源step100，输出HDD adapters/f11_turn_discount_best_step_100。未删除任何checkpoint，F12尚未提交，等待该验收。导出脚本2项单测和远端Bash语法检查PASS。
 
 - F11 Job140980 COMPLETED/0:0，250steps、10h49m10s，同节点2xPro6000；series_verified，五份各980,828,805bytes，无保存OOM。dev50/100/150/200/250=0.230769/0.269231/0.269231/0.230769/0.230769；best100，匹配F10最佳，尚无提升证据。

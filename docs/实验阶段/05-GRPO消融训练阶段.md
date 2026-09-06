@@ -1025,3 +1025,32 @@
 
 #### 改进措施
 - 复用参数化单卡导出脚本验证step100父模型+adapter；保留最佳产物，清理50/150/200/250后启动F12 LATA，独立从F01初始化，其余科学与系统参数冻结。
+
+### F11 final retention / 2026-09-06
+
+#### 实验设置
+- 训练140980、导出验证142938；按批准的训练保留五份、结束保留最佳策略，目标仅同run的global_step_50/150/200/250。
+
+#### 执行结果
+- 142938导出和生成PASS（详见阶段06）；四目录永久删除，释放3,923,315,220bytes。step100完整checkpoint与HDD最佳adapter保留，latest=100，audit-best成功，报告reports/storage/f11-retained-best-140980.json。
+
+#### 改进原因
+- 最佳产物验证成功，已可安全回收非最佳恢复状态；不影响step100后续评测，但无法恢复已删除四个步骤的精确训练状态。
+
+#### 改进措施
+- 无科学参数修改；进入F12 LATA，全新run，不从F11恢复。
+
+### F12 formal attempt1 / Job142944
+
+#### 实验设置
+- run f12_formal_20260906_stage21；configs/train/fallback_ablations/lata.yaml，grpo_lata、outcome、process weight0、turn alpha1.05；corrected F01父模型+fresh rank32/alpha32 LoRA、CAR train103/dev26、seed42、4x4、LR1e-6。
+- 同节点2xhighmem Pro6000，24h，250steps/save50/eval50，caps0.86/0.60，五份完整保存、best同分留早；console+W&B。训练代码与F11相同，仅消融配置切换。
+
+#### 执行结果
+- F11完成和最佳产物验收通过，非最佳清理审计成功；F12 Job142944已提交，训练结果待产出。
+
+#### 改进原因
+- 按冻结消融顺序比较LATA；F11最佳与F10持平，不预设F12必然提升。
+
+#### 改进措施
+- 使用已通过save/resume/full250验证的相同运行时；整段250steps，无额外50-step试跑。通过标准为训练完成、五份完整保存与dev序列可审计；效果按统一dev协议比较。

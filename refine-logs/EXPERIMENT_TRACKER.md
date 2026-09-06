@@ -62,8 +62,8 @@
 | F11-SAVE-SMOKE | 1 | complete | pre-rollout atomic save; retain all | 140549 | 1/1 | 0.269231 | grad0.228338 | save1.93s | experiments/f11_checkpoint_smoke_20260905_r1 | COMPLETED11m12s; 980828869bytes; series_verified; noOOM |
 | F11-RESUME-SMOKE | 1 | complete | resume step1 to2 | 140696 | 2/2 | 0.269231 | grad9.11e-6 | save2.42s | experiments/f11_checkpoint_smoke_20260905_r1 | COMPLETED15m03s; LoRA/optim/RNG/scheduler loaded; two0.981GB checkpoints; latest2/best1 |
 | F11 | 2 | complete | correctedF01 + fresh rank32; fixed pre-rollout save | 140980 | 250/250 | best100=0.269231; final=0.230769 | - | 10h49m10s | experiments/f11_formal_20260905_stage20_r2 | COMPLETED0:0; gpu-pro6000-9; five complete checkpoints; no save OOM; matches F10 best |
-| F11-ADAPTER | 1 | queued | best step100 export and parent+PEFT generation | 142938 | - | 0.269231 selection score | - | - | adapters/f11_turn_discount_best_step_100 | PENDING/Priority; original five checkpoints retained |
-| F12 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | LATA; awaiting F11 best-artifact validation142938 and cleanup |
+| F11-ADAPTER | 1 | complete | best step100 export and parent+PEFT generation | 142938 | - | 0.269231 selection score | - | 37s | adapters/f11_turn_discount_best_step_100 | PASS; 161534805bytes;392tensors;1token generation |
+| F12 | 1 | queued | corrected F01 merged parent + fresh rank32 RL LoRA | 142944 | 0/250 | - | - | - | experiments/f12_formal_20260906_stage21 | LATA; save50/eval50; same-node2xPro6000; F11 best validated and cleanup audited |
 | F13 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite; awaiting post-F10 human gate |
 | F14 | 1 | prepared | corrected F01 merged parent + fresh rank32 RL LoRA | - | - | - | - | - | - | PRM-Lite + LATA; awaiting post-F10 human gate |
 
