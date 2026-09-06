@@ -1010,3 +1010,18 @@
 
 #### 改进措施
 - 新run从父模型开始，不继承失败run或smoke权重；执行代码冻结，按50-step边界记录完整checkpoint与dev成绩。
+
+### F11 formal attempt2 / Job140980 / 2026-09-06 final
+
+#### 实验设置
+- 延续上述attempt2冻结配置与38b255c保存修复；F01父模型+fresh rank32/alpha32 LoRA，CAR train103/dev26、seed42、4x4、LR1e-6、Turn-Discount1.05，同节点2xPro6000。输出experiments/f11_formal_20260905_stage20_r2。
+
+#### 执行结果
+- COMPLETED/0:0，gpu-pro6000-9，10h49m10s，250/250steps；checkpoint-best-140980.json为series_verified，五份完整checkpoint各980,828,805bytes，无保存OOM。
+- baseline0=0.230769；dev50/100/150/200/250=0.230769/0.269231/0.269231/0.230769/0.230769。best100（与150并列取早），F10最佳同为0.269231，不能声称Turn-Discount提升。
+
+#### 改进原因
+- 完整训练验证保存修复；五份共4.90GB。按已批准协议在下一实验前验收最佳并清理非最佳。小dev集存在波动，非正式test结论。
+
+#### 改进措施
+- 复用参数化单卡导出脚本验证step100父模型+adapter；保留最佳产物，清理50/150/200/250后启动F12 LATA，独立从F01初始化，其余科学与系统参数冻结。

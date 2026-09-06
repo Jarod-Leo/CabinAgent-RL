@@ -17,10 +17,14 @@ PROJECT_ROOT="${PROJECT_ROOT:-/projects/jiatian001ssd/cabinagentrl/CabinAgent-RL
 ARCHIVE_ROOT="${ARCHIVE_ROOT:-/projects/cabinagentrlarchive/CabinAgent-RL}"
 GPU_ENV="${GPU_ENV:-$PROJECT_ROOT/envs/cabinagentrl}"
 PYTHON_BIN="${PYTHON_BIN:-$GPU_ENV/bin/python}"
-SOURCE_CHECKPOINT="$ARCHIVE_ROOT/experiments/f10_formal_20260903_stage19/checkpoints/global_step_50"
+SOURCE_CHECKPOINT="${SOURCE_CHECKPOINT:-$ARCHIVE_ROOT/experiments/f10_formal_20260903_stage19/checkpoints/global_step_50}"
 PARENT_MODEL="$ARCHIVE_ROOT/models/derived/Qwen2.5-7B-Instruct-F01-merged-20260901"
-OUTPUT_ADAPTER="$ARCHIVE_ROOT/adapters/f10_vanilla_best_step_50"
-REPORT="$PROJECT_ROOT/reports/storage/f10-best-adapter-${SLURM_JOB_ID}.json"
+OUTPUT_ADAPTER="${OUTPUT_ADAPTER:-$ARCHIVE_ROOT/adapters/f10_vanilla_best_step_50}"
+EXPORT_LABEL="${EXPORT_LABEL:-f10}"
+SOURCE_STEP="${SOURCE_STEP:-50}"
+SELECTION_SCORE="${SELECTION_SCORE:-0.269231}"
+SOURCE_JOB="${SOURCE_JOB:-136868}"
+REPORT="$PROJECT_ROOT/reports/storage/${EXPORT_LABEL}-best-adapter-${SLURM_JOB_ID}.json"
 
 cd "$PROJECT_ROOT"
 module purge
@@ -37,13 +41,13 @@ unset ROCR_VISIBLE_DEVICES HIP_VISIBLE_DEVICES
   echo "parent_model=$PARENT_MODEL"
   echo "output_adapter=$OUTPUT_ADAPTER"
   nvidia-smi -L
-} >"$PROJECT_ROOT/logs/f10-best-adapter-allocation-${SLURM_JOB_ID}.log" 2>&1
+} >"$PROJECT_ROOT/logs/${EXPORT_LABEL}-best-adapter-allocation-${SLURM_JOB_ID}.log" 2>&1
 
 "$PYTHON_BIN" -B scripts/export_verl_lora.py \
   --checkpoint "$SOURCE_CHECKPOINT" \
   --parent "$PARENT_MODEL" \
   --output "$OUTPUT_ADAPTER" \
-  --step 50 \
-  --metric-value 0.269231 \
-  --source-slurm-job 136868 \
+  --step "$SOURCE_STEP" \
+  --metric-value "$SELECTION_SCORE" \
+  --source-slurm-job "$SOURCE_JOB" \
   --report "$REPORT"

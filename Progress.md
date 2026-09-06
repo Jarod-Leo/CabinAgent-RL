@@ -1,5 +1,12 @@
 # CabinAgent-RL Progress
 
+### 2026-09-06：F11 完成与 F12 准备
+
+- F11最佳adapter导出/真实父模型加载验证Job142938已提交，当前PENDING/Priority；单卡highmem Pro6000、2h，来源step100，输出HDD adapters/f11_turn_discount_best_step_100。未删除任何checkpoint，F12尚未提交，等待该验收。导出脚本2项单测和远端Bash语法检查PASS。
+
+- F11 Job140980 COMPLETED/0:0，250steps、10h49m10s，同节点2xPro6000；series_verified，五份各980,828,805bytes，无保存OOM。dev50/100/150/200/250=0.230769/0.269231/0.269231/0.230769/0.230769；best100，匹配F10最佳，尚无提升证据。
+- 单卡adapter导出脚本参数化，复用既有导出和父模型加载验证；待最佳产物验收与非最佳清理后启动F12 LATA。SSD21.2/150GB，HDD72.3/250GB；科学参数保持冻结。
+
 ## 2026-06-20
 
 ### Stage 0: Orientation Started

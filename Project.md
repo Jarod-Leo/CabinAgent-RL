@@ -1,6 +1,10 @@
 # Project.md: CabinAgent-RL
 
-**Version**: v0.9 F11 checkpoint save/resume validated
+**Version**: v0.10 F11 complete; F12 preparation
+
+执行中：F11最佳adapter单卡验收Job142938排队（Priority）；五份checkpoint仍保留，F12尚未提交。通过后保留最佳、清理其余四份，再运行F12。
+
+最新状态（2026-09-06）：F11 Job140980 COMPLETED/0:0，250steps，10h49m10s；五份checkpoint完整，best step100 dev=0.269231（与150同分留早），final=0.230769，与F10最佳持平。保存OOM修复通过完整训练验证。复用单卡adapter导出脚本，参数化来源、分数和输出；最佳产物验收后清理非最佳，再启动独立F12 LATA。统一test/BFCL尚未完成。
 
 最新验收：GPU保存140549与独立恢复140696均PASS；完整checkpoint0.981GB，保存1.93/2.42s。正式F11 attempt2 Job140980已提交，run f11_formal_20260905_stage20_r2，从F01父模型新建LoRA，连续250steps、每50steps保存评测，保留五个恢复点，W&B实时记录。
 

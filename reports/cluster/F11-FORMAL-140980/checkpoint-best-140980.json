@@ -1,0 +1,80 @@
+{
+  "best_checkpoint_state": {
+    "baseline": {
+      "score": 0.23076923076923078,
+      "step": 0
+    },
+    "best": {
+      "score": 0.2692307692307692,
+      "step": 100
+    },
+    "comparison": "strict_greater",
+    "history": [
+      {
+        "score": 0.23076923076923078,
+        "step": 50
+      },
+      {
+        "score": 0.2692307692307692,
+        "step": 100
+      },
+      {
+        "score": 0.2692307692307692,
+        "step": 150
+      },
+      {
+        "score": 0.23076923076923078,
+        "step": 200
+      },
+      {
+        "score": 0.23076923076923078,
+        "step": 250
+      }
+    ],
+    "metric_key": "val-core/car_bench/reward/mean@1",
+    "retention": "all_until_review",
+    "schema_version": 2,
+    "tie_break": "earlier"
+  },
+  "checkpoints": [
+    {
+      "file_count": 11,
+      "path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/experiments/f11_formal_20260905_stage20_r2/checkpoints/global_step_50",
+      "required_files_present": true,
+      "size_bytes": 980828805,
+      "step": 50
+    },
+    {
+      "file_count": 11,
+      "path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/experiments/f11_formal_20260905_stage20_r2/checkpoints/global_step_100",
+      "required_files_present": true,
+      "size_bytes": 980828805,
+      "step": 100
+    },
+    {
+      "file_count": 11,
+      "path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/experiments/f11_formal_20260905_stage20_r2/checkpoints/global_step_150",
+      "required_files_present": true,
+      "size_bytes": 980828805,
+      "step": 150
+    },
+    {
+      "file_count": 11,
+      "path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/experiments/f11_formal_20260905_stage20_r2/checkpoints/global_step_200",
+      "required_files_present": true,
+      "size_bytes": 980828805,
+      "step": 200
+    },
+    {
+      "file_count": 11,
+      "path": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/experiments/f11_formal_20260905_stage20_r2/checkpoints/global_step_250",
+      "required_files_present": true,
+      "size_bytes": 980828805,
+      "step": 250
+    }
+  ],
+  "incomplete_checkpoints": [],
+  "marker_step": 250,
+  "run_dir": "/projects/_ssd/jiatian001ssd/cabinagentrl/CabinAgent-RL/experiments/f11_formal_20260905_stage20_r2",
+  "status": "series_verified"
+}

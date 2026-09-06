@@ -14,8 +14,10 @@ class ExportVerlLoraTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("#SBATCH --gres=gpu:pro6000:1", script)
-        self.assertIn("--step 50", script)
-        self.assertIn("--metric-value 0.269231", script)
+        self.assertIn('SOURCE_STEP="${SOURCE_STEP:-50}"', script)
+        self.assertIn('SELECTION_SCORE="${SELECTION_SCORE:-0.269231}"', script)
+        self.assertIn('--step "$SOURCE_STEP"', script)
+        self.assertIn('--metric-value "$SELECTION_SCORE"', script)
         exporter = (ROOT / "scripts" / "export_verl_lora.py").read_text(encoding="utf-8")
         self.assertIn("Refusing to overwrite adapter output", exporter)
         self.assertIn("validate_parent_adapter_generation", exporter)
